@@ -14,11 +14,11 @@ def find_job(position,location,user_skills,page_number):
     "Connection": "keep-alive",
     "Accept-Language": "en-US,en;q=0.9,lt;q=0.8,et;q=0.7,de;q=0.6"
 }
-    i=1
+    page_count=1
     info = []
-    while i <= page_number:
-        html_text = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords=%22{position}%22&txtLocation={location}&pDate=I&sequence=%22{i}&startPage=1', headers=header).text
-        #html_text2 = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords=%22{position}%22&txtLocation={location}&pDate=I&sequence=%22{i}&startPage=1', headers=header)
+    while page_count <= page_number:
+        html_text = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords=%22{position}%22&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header).text
+        #html_text2 = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords=%22{position}%22&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header)
         #print(html_text2.status_code)
         soup = BeautifulSoup(html_text, 'html.parser')
         jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx')
@@ -40,7 +40,7 @@ def find_job(position,location,user_skills,page_number):
                     info.append(indiv)
                 else:
                     continue
-        i+=1
+        page_count+=1 
     print(info)
     return info
     
