@@ -53,9 +53,20 @@ def save_to_csv(info):
     print("File saved")
 
 if __name__ == "__main__":
-    position = input("Enter position/job: ")
-    location = input("Enter location: ")
-    user_skills = input("Enter your skills: ").split(',')
-    page_number = int(input("Enter number of pages to search: "))
-    jobs = find_job(position,location,user_skills,page_number)
-    save_to_csv(jobs)
+    while True:
+        position = input("Enter position/job (Type \"exit\" to stop the program): ")
+        if position.lower() == 'exit':
+            break
+        location = input("Enter location (Type \"exit\" to stop the program): ")
+        if location.lower() == 'exit':
+            break
+        user_skills = input("Enter your skills (Type \"exit\" to stop the program): ").split(',')
+        if user_skills[0].lower() == 'exit':
+            break
+        #check for at least 1 input in either position, location or skills
+        if (position == '' and location == '' and user_skills == ''):
+            print("Please enter at least 1 input")
+        else:
+            page_number = int(input("Enter number of pages to search: "))
+            jobs = find_job(position,location,user_skills,page_number)
+            save_to_csv(jobs)
