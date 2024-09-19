@@ -15,42 +15,57 @@ def find_job(position,location,user_skills,page_number):
     "Accept-Language": "en-US,en;q=0.9,lt;q=0.8,et;q=0.7,de;q=0.6"
 }
     page_count=1
-    info = []
+    info = [] # list containing all the search results (postion, company name and skillset required)
     while page_count <= page_number:
-        html_text = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords=%22{position}%22&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header).text
-        #html_text2 = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords=%22{position}%22&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header)
+        html_text = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header).text
+        #html_text2 = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header)
         #print(html_text2.status_code)
         soup = BeautifulSoup(html_text, 'html.parser')
-        jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx')
+        jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx') #finds all the jobs
         for index, job in enumerate(jobs):
-            indiv = []
-            title = ''
-            company_name = ''
-            skill = job.find('span',class_='srp-skills').text.replace('\n','').replace('  ','').replace('&',' & ')
-            for user_skill in user_skills:
-                if user_skill in skill:
-                    title_url = job.header.h2.a['href']
-                    title_html = requests.get(str(title_url)).text
-                    title_soup = BeautifulSoup(title_html, 'html.parser')
-                    title = title_soup.find_all('h1', class_='jd-job-title')[0].text.replace('\n','').replace('\t','').replace('  ','').replace('"','')
-                    indiv.append(title)
-                    company_name = job.find('h3', class_='joblist-comp-name').text.replace('\n','').replace('(More Jobs)','').replace('  ','')
-                    indiv.append(company_name)
-                    indiv.append(skill)
-                    info.append(indiv)
-                else:
-                    continue
+            eachJob = [] # to isolate each job and add into info list as a list of its own
+            title = '' # title/position offered
+            company_name = '' # the name of the company
+            requiredSkills = (job.find('span',class_='srp-skills').text.replace('\n',',').replace('  ','').replace('&',' & ').replace('.','')).split(',') #to find all the required skills for that job and to clean the text that we get back
+            jobUrl = job.header.h2.a['href'] #to get the url link to access the job's posting page
+            jobHtml = requests.get(str(jobUrl)).text
+            jobSoup = BeautifulSoup(jobHtml, 'html.parser')
+            title = jobSoup.find_all('h1', class_='jd-job-title')[0].text.replace('\n','').replace('\t','').replace('  ',' ').replace('"','').replace('  ','') # to get the position/title offered by the company
+            eachJob.append(title) #append the position/title offered by the company to a list (which is contains the details of the job posting)
+            company_name = job.find('h3', class_='joblist-comp-name').text.replace('\n','').replace('(More Jobs)','').replace('  ','')
+            eachJob.append(company_name) # append the company name to a list (which is contains the details of the job posting
+            eachJob.append(requiredSkills) # append the required skillset of the job as a list to another list (which is contains the details of the job posting. this is because we will need to use the required skillset data
+            info.append(eachJob) # finally append that one job posting to the list of job postings
         page_count+=1 
-    print(info)
     return info
+
+def formatData(info): # this is to format data of the required skillset so we can match and filter the skills
+    for jobs in info:
+        for skill in jobs[2]: #jobs[2] is the list of skills required by the job
+            if skill == '': #if it is empty, remove it
+                jobs[2].remove('')
+                skill.replace('.','') #removing the full stops
+        jobs[2] = [skill.lower() for skill in jobs[2]] #to make all the words lowercase so we can match the skills of the user input
+    return info
+
+def filterViaSkills(JobInfo):
+    filteredJobs = [] # this is a list containing the list of jobs that matchest the skillset of the user input
+    for job in JobInfo: # for each job in the job list
+        for skill in user_skills:  # for each skill entered by the user input
+            if skill.lower() in job[2]: #lowercase all the words so to match the words
+                filteredJobs.append(job) #if the user's skill is in the required skill list of the job, then add to the filteredJobs list
+    return filteredJobs
     
             
 def save_to_csv(info):
-    with open('jobs.csv','w', newline='') as jf:
-        writer = csv.writer(jf, delimiter=',')
-        writer.writerow(["Position/Title","Company Name","Required Skills"])
-        writer.writerows(info)
-    print("File saved")
+    if info == []: # if there is no such job
+        print("No such job in TimesJobs listing with your skillsets or location")
+    else:
+        with open('jobs.csv','w', newline='') as jf:
+            writer = csv.writer(jf, delimiter=',')
+            writer.writerow(["Position/Title","Company Name","Required Skills"]) #write the title of the colums (categories the data)
+            writer.writerows(info) #write all the job that fits the user via their skillset into the csv
+        print("File saved")
 
 if __name__ == "__main__":
     while True:
@@ -61,12 +76,29 @@ if __name__ == "__main__":
         if location.lower() == 'exit':
             break
         user_skills = input("Enter your skills (Type \"exit\" to stop the program): ").split(',')
+        user_skills = [i.lower() for i in user_skills]
         if user_skills[0].lower() == 'exit':
             break
         #check for at least 1 input in either position, location or skills
-        if (position == '' and location == '' and user_skills == ''):
+        if (position == '' and location == '' and user_skills == ['']):
             print("Please enter at least 1 input")
         else:
-            page_number = int(input("Enter number of pages to search: "))
-            jobs = find_job(position,location,user_skills,page_number)
-            save_to_csv(jobs)
+            page_number = input("Enter number of pages to search: ")
+            if page_number == '': # if user decided not to input any page number, then it will only search for 1 page of the results
+                page_number = 1
+            try:
+                page_number = int(page_number) # input validation for page_number
+            except ValueError:
+                print("Enter a valid integer")
+            # position = "it"
+            # location = "singapore"
+            # user_skills = "python,sql".split(',')
+            # page_number = 2
+            jobs = find_job(position.lower(),location.lower(),user_skills,page_number)
+            formattedData = formatData(jobs) # to format the data so we can use it to filter jobs in the next function
+            if user_skills == ['']: #if user decided not to put any skills
+                save_to_csv(formattedData) # then just save all the job posing found into the csv
+            else:
+                filteredJobs = filterViaSkills(formattedData) # to get all the jobs matching the user input of their skills
+                save_to_csv(filteredJobs) # save the results in a csv file
+            break
