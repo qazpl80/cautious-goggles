@@ -64,7 +64,7 @@ if __name__ == "__main__":
         if user_skills[0].lower() == 'exit':
             break
         #check for at least 1 input in either position, location or skills
-        if (position == '' and location == '' and user_skills == ''):
+        if (position == '' and location == '' and user_skills == ['']):
             print("Please enter at least 1 input")
         else:
             page_number = int(input("Enter number of pages to search: "))
