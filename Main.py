@@ -31,10 +31,12 @@ def find_job(position,location,user_skills,page_number):
             jobHtml = requests.get(str(jobUrl)).text
             jobSoup = BeautifulSoup(jobHtml, 'html.parser')
             title = jobSoup.find_all('h1', class_='jd-job-title')[0].text.replace('\n','').replace('\t','').replace('  ',' ').replace('"','').replace('  ','') # to get the position/title offered by the company
+            jd = job.find('ul', class_='list-job-dtl clearfix').text.replace('\n',' ').replace('\t',' ').replace('  ',' ') # to get the job description
             eachJob.append(title) #append the position/title offered by the company to a list (which is contains the details of the job posting)
             company_name = job.find('h3', class_='joblist-comp-name').text.replace('\n','').replace('(More Jobs)','').replace('  ','')
             eachJob.append(company_name) # append the company name to a list (which is contains the details of the job posting
             eachJob.append(requiredSkills) # append the required skillset of the job as a list to another list (which is contains the details of the job posting. this is because we will need to use the required skillset data
+            eachJob.append(jd) # append the job description to the list of job posting
             info.append(eachJob) # finally append that one job posting to the list of job postings
         page_count+=1 
     return info
@@ -63,7 +65,7 @@ def save_to_csv(info):
     else:
         with open('jobs.csv','w', newline='') as jf:
             writer = csv.writer(jf, delimiter=',')
-            writer.writerow(["Position/Title","Company Name","Required Skills"]) #write the title of the colums (categories the data)
+            writer.writerow(["Position/Title","Company Name","Required Skills","Job Description"]) #write the title of the colums (categories the data)
             writer.writerows(info) #write all the job that fits the user via their skillset into the csv
         print("File saved")
 
