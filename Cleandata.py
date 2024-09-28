@@ -36,13 +36,12 @@ def is_english(text):
 
 def extract_requirements(text):
     """Extracts qualifications/requirements from job descriptions."""
-    # This is a placeholder; you may want to implement a more sophisticated method.
     requirements_section = re.search(r'(Qualifications|Requirements|Skills|Desired Skills).*?(?=Responsibilities|$)', text, re.IGNORECASE)
     return requirements_section.group(0) if requirements_section else ''
 
 def clean_job_descriptions(input_file, output_file):
     # Read the csv file with specified encoding
-    df = pd.read_csv(input_file, encoding='latin1')  # You can change 'latin1' to 'iso-8859-1' or 'cp1252' if needed
+    df = pd.read_csv(input_file, encoding='latin1')  # Can change 'latin1' to 'iso-8859-1' or 'cp1252' if needed
 
     # Assuming the job descriptions are in a column named 'Job Description'
     cleaned_data = []

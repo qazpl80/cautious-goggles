@@ -32,7 +32,7 @@ def find_job(position,location,user_skills,page_number):
             jobHtml = requests.get(str(jobUrl)).text
             jobSoup = BeautifulSoup(jobHtml, 'html.parser')
             title = jobSoup.find_all('h1', class_='jd-job-title')[0].text.replace('\n','').replace('\t','').replace('  ',' ').replace('"','').replace('  ','') # to get the position/title offered by the company
-            jobdescription = job.find('ul', class_='list-job-dtl clearfix').text.replace('\n',' ').replace('\t',' ').replace('  ',' ') # to get the job description
+            jobdescription = jobSoup.find('div', class_='jd-desc job-description-main').text.replace('\n',' ').replace('\t',' ').replace('  ',' ') # to get the job description
             eachJob.append(title) #append the position/title offered by the company to a list (which is contains the details of the job posting)
             company_name = job.find('h3', class_='joblist-comp-name').text.replace('\n','').replace('(More Jobs)','').replace('  ','')
             eachJob.append(company_name) # append the company name to a list (which is contains the details of the job posting
