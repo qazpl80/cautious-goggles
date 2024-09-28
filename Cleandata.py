@@ -41,8 +41,8 @@ def extract_requirements(text):
     return requirements_section.group(0) if requirements_section else ''
 
 def clean_job_descriptions(input_file, output_file):
-    # Read the csv file
-    df = pd.read_csv(input_file)
+    # Read the csv file with specified encoding
+    df = pd.read_csv(input_file, encoding='latin1')  # You can change 'latin1' to 'iso-8859-1' or 'cp1252' if needed
 
     # Assuming the job descriptions are in a column named 'Job Description'
     cleaned_data = []
@@ -63,6 +63,6 @@ def clean_job_descriptions(input_file, output_file):
 
 # Example usage
 if __name__ == "__main__":
-    input_file = 'jobs.csv'  # Input Excel file with job descriptions
+    input_file = 'jobs.csv'  # Input CSV file with job descriptions
     output_file = 'cleaned_job_descriptions.csv'  # Output CSV file
     clean_job_descriptions(input_file, output_file)
