@@ -1,16 +1,6 @@
 import pandas as pd
-import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
-from Cleandata import clean_job_descriptions  # Importing the cleaning function
-
-# Download NLTK resources
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-
-# Initialize lemmatizer and stopwords
-lemmatizer = nltk.WordNetLemmatizer()
-stop_words = set(nltk.corpus.stopwords.words('english'))
+from Cleandata import clean_job_descriptions # Importing the cleaning function
 
 # Define a list of IT skills
 IT_SKILLS = {
