@@ -1,68 +1,149 @@
+import spacy
 import pandas as pd
+import re
 from langdetect import detect
 import nltk
-import re
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from keybert import KeyBERT
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import CountVectorizer
 
-# Download NLTK resources
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('punkt_tab')
+# Load the spaCy model
+nlp = spacy.load('en_core_web_sm')
+kw_model = KeyBERT()
 
-# Initialize lemmatizer and stopwords
+# Initialize NLTK components
 lemmatizer = WordNetLemmatizer()
 stop_words = set(stopwords.words('english'))
 
+requirement_keywords = [
+    "responsible for", "experience in", "competency", "skills", "ability to", 
+    "required", "must have", "proficiency", "knowledge of", "familiarity with",
+    "oversee", "manage", "supervise", "source", "identify", "mentor", "agile", "description"
+]
+
+# Clean text for further processing
 def clean_text(text):
-    """Cleans the text by removing non-alphabetic characters, stop words, and applying lemmatization."""
-    # Remove non-alphabetic characters
-    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    # Retain colons, dashes, commas, and other relevant punctuation marks
+    # Remove only unwanted characters like non-alphanumeric characters except for :, -, and ,
+    text = re.sub(r'[^a-zA-Z0-9\s,:-]', '', text)
     
     # Tokenize the text
     words = nltk.word_tokenize(text)
     
-    # Remove stop words and lemmatize
+    # Remove stop words and apply lemmatization
     cleaned_words = [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words]
     
     return ' '.join(cleaned_words)
 
 def is_english(text):
-    """Detects if the text is in English."""
     try:
         return detect(text) == 'en'
     except:
         return False
+    
+def keyword_based_extraction(sentences):
+    # Find sentences that contain requirement-related keywords
+    extracted_requirements = []
+    for sentence in sentences:
+        if any(keyword in sentence.lower() for keyword in requirement_keywords):
+            extracted_requirements.append(sentence.strip())
+    
+    return ' '.join(extracted_requirements) if extracted_requirements else ''
 
 def extract_requirements(text):
-    """Extracts qualifications/requirements from job descriptions."""
-    requirements_section = re.search(r'(Qualifications|Requirements|Skills|Desired Skills).*?(?=Responsibilities|$)', text, re.IGNORECASE)
-    return requirements_section.group(0) if requirements_section else ''
+    # Match any heading with or without colons, and with or without spaces
+    pattern = re.compile(r'(\b[A-Za-z\s&]+)\s*:\s*(.+?)(?=\b[A-Za-z\s&]+(?:\s*:\s*)|$)', re.DOTALL)
+    matches = pattern.findall(text)
 
+    # Join all matches related to "requirements" sections
+    extracted_requirements = []
+    for heading, content in matches:
+        # Add logic to filter relevant sections based on the heading or content
+        if any(keyword.lower() in heading.lower() for keyword in ["Qualifications", "Skills", "Responsibilities", "Network Design", "Troubleshooting", "Experience", "Education", "Requirements", "Job Description", "Installation and Configuration", "Security Implementation", "Upgrades", "Documentation", "Performance Optimization", "Vendor Management", "Compliance & Standards"]):
+            extracted_requirements.append(f'{heading}: {content.strip()}')
+    
+    # If regex extraction fails or doesn't capture everything, fall back to keyword-based extraction
+    if not extracted_requirements:
+        # Tokenize the text into sentences and apply keyword-based extraction
+        sentences = nltk.sent_tokenize(text)
+        extracted_keywords = keyword_based_extraction(sentences)
+        
+        if extracted_keywords:
+            extracted_requirements.append(extracted_keywords)
+
+    return ' '.join(extracted_requirements) if extracted_requirements else ''
+
+# Extract keywords using KeyBERT
+def extract_keywords(text):
+    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 2), stop_words='english', top_n=5)
+    return ', '.join([kw[0] for kw in keywords])
+
+# Perform NER using spaCy (MIGHT NEED TO REMOVE THIS FUNCTION)
+def extract_ner(text):
+    doc = nlp(text)
+    skills = [ent.text for ent in doc.ents if ent.label_ in ['ORG', 'GPE', 'DATE', 'SKILL']]
+    return ', '.join(skills) if skills else 'No skills found'
+
+# Perform topic modeling using LDA
+def topic_modeling(texts):
+    vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
+    dtm = vectorizer.fit_transform(texts)
+    lda = LatentDirichletAllocation(n_components=5, random_state=42)
+    lda.fit(dtm)
+    
+    topics = []
+    for index, topic in enumerate(lda.components_):
+        top_words = [vectorizer.get_feature_names_out()[i] for i in topic.argsort()[-5:]]
+        topics.append(', '.join(top_words))
+    return topics
+
+# Main function to clean and extract information from job descriptions
 def clean_job_descriptions(input_file, output_file):
-    # Read the csv file with specified encoding
-    df = pd.read_csv(input_file, encoding='latin1')  # Can change 'latin1' to 'iso-8859-1' or 'cp1252' if needed
-
-    # Assuming the job descriptions are in a column named 'Job Description'
+    df = pd.read_csv(input_file, encoding='latin1')
     cleaned_data = []
+    all_texts = []
     
     for index, row in df.iterrows():
         jd = row['Job Description']
         
-        # Check if JD is in English
         if is_english(jd):
-            # Extract the requirements
+            # Extract the requirements section
             requirements = extract_requirements(jd)
-            cleaned_requirements = clean_text(requirements)
-            cleaned_data.append({'Cleaned Requirements': cleaned_requirements})
-
-    # Convert cleaned data to a DataFrame and save to CSV
+            if requirements:
+                cleaned_requirements = clean_text(requirements)
+                
+                # Store cleaned text for LDA analysis later
+                all_texts.append(cleaned_requirements)
+                
+                # Extract skills using KeyBERT, NER, and LDA
+                keywords = extract_keywords(cleaned_requirements)
+                ner_skills = extract_ner(cleaned_requirements)
+                
+                cleaned_data.append({
+                    'Cleaned Data': cleaned_requirements,
+                    'Keywords (KeyBERT)': keywords,
+                    'NER Skills (spaCy)': ner_skills
+                })
+            else:
+                cleaned_data.append({'Cleaned Data': 'No extracted requirements', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
+        else:
+            cleaned_data.append({'Cleaned Data': 'Non-English data', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
+    
+    # Perform LDA topic modeling after processing all job descriptions
+    lda_topics = topic_modeling(all_texts)
+    
+    # Add LDA topics to the cleaned data
+    for i, topic in enumerate(lda_topics):
+        cleaned_data[i]['LDA Topics'] = topic
+    
+    # Save the results to CSV
     cleaned_df = pd.DataFrame(cleaned_data)
     cleaned_df.to_csv(output_file, index=False)
 
 # Example usage
 if __name__ == "__main__":
-    input_file = 'jobs.csv'  # Input CSV file with job descriptions
-    output_file = 'cleaned_job_descriptions.csv'  # Output CSV file
+    input_file = 'jobs.csv'
+    output_file = 'cleaned_job_descriptions.csv'
     clean_job_descriptions(input_file, output_file)
