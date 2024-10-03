@@ -7,57 +7,57 @@ from markdownify import markdownify
 import datetime
 
 
-class RequestSession(requests.Session):
+class RequestSession(requests.Session): # Request session class to create an object of session
 
-    def __init__(self):
-        requests.Session.__init__(self)
+    def __init__(self): # Constructor to initialize the session
+        requests.Session.__init__(self) # Inheriting the properties of the parent class
         
-    def request(self, method, url, **kwargs):
-        return requests.Session.request(self, method, url, **kwargs)
+    def request(self, method, url, **kwargs): # Method to make a request to the server
+        return requests.Session.request(self, method, url, **kwargs) # Making a request to the server
 
 
-def create_session() -> requests.Session:
-    session = RequestSession()
-    return session
+def create_session() -> requests.Session: # Function to create a session object
+    session = RequestSession() # Creating a session object
+    return session # Returning the session object
 
 
-class Site(Enum):
-    LINKEDIN = "linkedin"
-    INDEED = "indeed"
-    GLASSDOOR = "glassdoor"
-    TIMESJOBS = "timesjobs"
+class Site(Enum): # Enum class to define the sites
+    LINKEDIN = "linkedin" # LinkedIn site
+    INDEED = "indeed" # Indeed site
+    GLASSDOOR = "glassdoor" # Glassdoor site
+    TIMESJOBS = "timesjobs" # TimesJobs site
     
-class UserInput(BaseModel):
-    scrapSites: list[Site]
-    position: str
-    location: str | None = None
-    country: str = "singapore"
-    noOfJobs: int = 20
+class UserInput(BaseModel): # Base model class to define the user input
+    scrapSites: list[Site] # List of sites to scrape
+    position: str = "cyber security" # Position to search
+    location: str | None = None # Location to search
+    country: str = "singapore" # Country to search
+    noOfJobs: int = 20 # Number of jobs to scrape
 
-class indeedScraper():
-    def __init__(self, proxiesList :list[str] | str | None = None):
-        self.session = create_session()
-        self.site = Site.INDEED
-        self.scrapeInput = None
-        self.header = None
-        self.uniqueJobs = set()
-        self.apiUrl = "https://apis.indeed.com/graphql"
-        self.siteUrl = "https://sg.indeed.com"
+class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed site
+    def __init__(self, proxiesList :list[str] | str | None = None): # Constructor to initialize the class
+        self.session = create_session() # Creating a session object
+        self.site = Site.INDEED # Setting the site to Indeed
+        self.scrapeInput = None # Initializing the scrape input
+        self.header = None # Initializing the header
+        self.uniqueJobs = set() # Initializing the unique jobs
+        self.apiUrl = "https://apis.indeed.com/graphql"   # API URL
+        self.siteUrl = "https://sg.indeed.com" # Site URL
         
-        retries = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[500,502,503,504]
+        retries = Retry( # Retry object to retry the request
+            total=3, # Total number of retries
+            backoff_factor=1, # Backoff factor
+            status_forcelist=[500,502,503,504] # Status force list
         )
-        adapter = HTTPAdapter(max_retries=retries)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
+        adapter = HTTPAdapter(max_retries=retries) # Adapter object to retry the request
+        self.session.mount("http://", adapter) # Mounting the adapter to the session (http)
+        self.session.mount("https://", adapter) # Mounting the adapter to the session (https)
         
-    def scrape(self, scrapeInput: UserInput):
-        self.scrapeInput = scrapeInput
-        self.header = {
-        "Host": "apis.indeed.com",
-        "content-type": "application/json",
+    def scrape(self, scrapeInput: UserInput): # Method to scrape the jobs
+        self.scrapeInput = scrapeInput # Setting the scrape input
+        self.header = { # Header to make the request
+        "Host": "apis.indeed.com", 
+        "content-type": "application/json", 
         "indeed-api-key": "161092c2017b5bbab13edb12461a62d5a833871e7cad6d9d475304573de67ac8",
         "accept": "application/json",
         "indeed-locale": "en-US",
@@ -66,180 +66,181 @@ class indeedScraper():
         "indeed-app-info": "appv=193.1; appid=com.indeed.jobsearch; osv=16.6.1; os=ios; dtype=phone",
         }
         
-        jobList = []
-        while len(self.uniqueJobs) < scrapeInput.noOfJobs:
-          jobs = self.scrapePage()
-          jobList += jobs
-        return jobList[:self.scrapeInput.noOfJobs]
+        jobList = [] # List to store the jobs
+        while len(self.uniqueJobs) < scrapeInput.noOfJobs: # Loop to scrape the jobs
+          jobs = self.scrapePage() # Scraping the page
+          jobList += jobs # Adding the jobs to the list
+        return jobList[:self.scrapeInput.noOfJobs] # Returning the jobs
     
-    def scrapePage(self):
-        jobsList = []
-        position = self.scrapeInput.position.replace('"', '\\')
-        limit = self.scrapeInput.noOfJobs
-        query = self.searchQuery.format(
-            what = (f'what: "{position}"'),
-            location = (f'location: {{where: "{self.scrapeInput.location}", radius: 35, radiusUnit: MILES}}'),
-            limit = (f'limit: {limit}')
+    def scrapePage(self): # Method to scrape the page
+        jobsList = [] # List to store the jobs
+        position = self.scrapeInput.position.replace('"', '\\') # Position to search
+        limit = self.scrapeInput.noOfJobs # Number of jobs to scrape
+        query = self.searchQuery.format( # Query to search the jobs
+            what = (f'what: "{position}"'), 
+            location = (f'location: {{where: "{self.scrapeInput.location}", radius: 35, radiusUnit: MILES}}'), 
+            limit = (f'limit: {limit}') if limit else ''
         )
-        payload = {
-            "query": query,
+        payload = { # Payload to make the request
+            "query": query, 
         }
-        self.header["indeed-co"] = 'SG'
-        response = self.session.post(
-            self.apiUrl,
-            headers=self.header,
-            json=payload,
-            timeout = 10,
-        )
-        if response.status_code != 200:
-            print(f'{response.status_code} STATUS CODE NOT RIGHT {response.reason}')
-            return jobs
-        data = response.json()
-        if "data" in data and "jobSearch" in data["data"] and "results" in data["data"]["jobSearch"]:
-            jobs = data["data"]["jobSearch"]["results"]
-        else:
-            print("WRONG DATA STRUCTURE!!")
-        jobs = data["data"]["jobSearch"]["results"]
-        jobsList.append(jobs)
-        JobsDetailsList = [self.getJobsDetails(job["job"]) for job in jobs]
-        for i in JobsDetailsList:
-          for j in range(len(i)):
-            if i[j] is None:
-              i[j] = 'NIL'
-        with open('jobs.csv', 'w', newline='') as f:
-          writer = csv.writer(f, delimiter=',')
-          writer.writerow(['ID', 'Title', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Description', 'Job post date', 'Job URL'])
-          writer.writerows(JobsDetailsList)
+        self.header["indeed-co"] = 'SG' # Setting the country to Singapore
+        response = self.session.post( # Making a post request
+            self.apiUrl, # API URL
+            headers=self.header, # Header
+            json=payload, # Payload
+            timeout = 10, # Timeout
+        ) 
+        if response.status_code != 200: # Checking the status code
+            print(f'{response.status_code} STATUS CODE NOT RIGHT {response.reason}') # Printing the status code if not right
+            return jobs # Returning the jobs if status code is not right
+        data = response.json() # Getting the response in JSON format
+        if "data" in data and "jobSearch" in data["data"] and "results" in data["data"]["jobSearch"]: # Checking the data structure
+            jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
+        else: 
+            print("WRONG DATA STRUCTURE!!") # Printing the message if wrong data structure
+        jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
+        jobsList.append(jobs) # Adding the jobs to the list
+        JobsDetailsList = [self.getJobsDetails(job["job"]) for job in jobs] # Getting the jobs details by calling the method for each job
+        for i in JobsDetailsList: # Loop to check the None values
+          for j in range(len(i)): 
+            if i[j] is None:  # Checking if the value is None
+              i[j] = 'NIL' # Setting the value to NIL if None
+        with open('jobs.csv', 'w', newline='') as f: # Opening the file to write the jobs
+          writer = csv.writer(f, delimiter=',') # Creating a CSV writer object to write the jobs with delimiter as comma
+          writer.writerow(['ID', 'Title', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Description', 'Job post date', 'Job URL']) # Writing the header
+          writer.writerows(JobsDetailsList) # Writing the jobs details
         # with open('jobs.txt', 'w') as f:
         #   f.write('ID, Title, City, Country Code, Country Name, Postal Code, Street Address, Description, Job post date, Job URL' + '\n')
         #   for i in JobsDetailsList:
         #       f.writelines(j + ',' for j in i)
         #       f.write('-' * 100)
         
-        return jobsList
+        return jobsList # Returning the jobs list
       
-    def getJobsDetails(self, job:dict):
-      jobData = []
-      jobUrl = f'{self.siteUrl}/viewjob?jk={job["key"]}'
-      if jobUrl in self.uniqueJobs:
-        return
-      self.uniqueJobs.add(jobUrl)
-      description = job["description"]["html"]
-      if description is not None:
-        descripMD = markdownify(description)
-        description = descripMD.strip()
-      jobPostDate = datetime.datetime.fromtimestamp(job["datePublished"]/1000).strftime('%Y-%M-%d')
-      jobData.append(str(job['key']))
-      jobData.append(job['title'])
-      jobData.append(job.get("location", '').get("city"))
-      jobData.append(job.get("location", '').get("countryCode"))
-      jobData.append(job.get("location", '').get("countryName"))
-      jobData.append(job.get("location", '').get("postalCode"))
-      jobData.append(job.get("location", '').get("streetAddress"))
-      jobData.append(description)
-      jobData.append(jobPostDate)
-      jobData.append(jobUrl)
-      jobData.append('\n' * 8)
+    def getJobsDetails(self, job:dict): # Method to get the jobs details
+      jobData = [] # List to store the job data
+      jobUrl = f'{self.siteUrl}/viewjob?jk={job["key"]}' # Job URL
+      if jobUrl in self.uniqueJobs: # Checking if the job URL is unique
+        return # Returning and stop the execution of the function and go to the next job if the job URL is not unique
+      self.uniqueJobs.add(jobUrl) # Adding the job URL to the unique jobs
+      description = job["description"]["html"] # Description of the job
+      if description is not None: # Checking if the description is not None
+        descripMD = markdownify(description) # Converting the description to markdown, from HTML format to markdown format
+        description = descripMD.strip() # Stripping the empty spaces
+      jobPostDate = datetime.datetime.fromtimestamp(job["datePublished"]/1000).strftime('%Y-%M-%d') # Job post date
+      jobData.append(str(job['key'])) # Adding the job key to the job data
+      jobData.append(job['title']) # Adding the job title to the job data
+      jobData.append(job.get("location", '').get("city")) # Adding the job city to the job data
+      jobData.append(job.get("location", '').get("countryCode")) # Adding the job country code to the job data
+      jobData.append(job.get("location", '').get("countryName")) # Adding the job country name to the job data
+      jobData.append(job.get("location", '').get("postalCode"))  # Adding the job postal code to the job data
+      jobData.append(job.get("location", '').get("streetAddress")) # Adding the job street address to the job data
+      jobData.append(description) # Adding the job description to the job data
+      jobData.append(jobPostDate) # Adding the job post date to the job data
+      jobData.append(jobUrl) # Adding the job URL to the job data
+      jobData.append('\n' * 8) # Adding 8 new lines to the job data to separate the jobs and make it more readable in the CSV file
 
-      return jobData
+      return jobData # Returning the job data
     
-    searchQuery = """
-        query GetJobData {{
-          jobSearch(
-            {what}
-            {location}
-            {limit}
-            sort: RELEVANCE
-          ) {{
-            results {{
-              trackingKey
-              job {{
-                source {{
-                  name
+    searchQuery = """ # Search query to search the jobs 
+        query GetJobData {{  # Query to get the job data
+          jobSearch( # Job search query
+            {what} # job/search term to search
+            {location} # location to search
+            {limit} # limit to search the number of jobs
+            sort: RELEVANCE # Sorting the jobs by relevance
+          ) {{ 
+            results {{ # Results to store the jobs
+              trackingKey # Tracking key to track the job
+              job {{ # Job details
+                source {{ # Source of the job
+                  name # Name of the source
                 }}
-                key
-                title
-                datePublished
-                dateOnIndeed
-                description {{
-                  html
+                key # ID of the job
+                title # Title of the job
+                datePublished # Date published of the job
+                dateOnIndeed # Date on Indeed of the job
+                description {{ # Description of the job
+                  html # HTML format of the description
                 }}
-                location {{
-                  countryName
-                  countryCode
-                  admin1Code
-                  city
-                  postalCode
-                  streetAddress
-                  formatted {{
-                    short
-                    long
+                location {{ # Location of the job
+                  countryName # Country name
+                  countryCode # Country code
+                  admin1Code # Admin code
+                  city # City
+                  postalCode # Postal code
+                  streetAddress # Street address
+                  formatted {{ # Formatted address
+                    short # Short address
+                    long  # Long address
                   }}
                 }}
               }}
             }}
           }}
         }}
-        """
+        """ 
         
         
     
-class timesJobsScraper():
+class timesJobsScraper(): # TimesJobs scraper class to scrape the jobs from TimesJobs site 
+    pass 
+
+class linkedinScraper(): # LinkedIn scraper class to scrape the jobs from LinkedIn site
     pass
 
-class linkedinScraper():
-    pass
-
-def scrapeJobs(
-    sitePlatform: str | list[str],
-    position: str,
-    location: str,
-    indeedCountry: str = 'singapore',
-    proxies: list[str] | str | None = None,
-    pages: int | None = 0,
+def scrapeJobs( # Function to scrape the jobs
+    sitePlatform: str | list[str], # Site platform
+    position: str, # Position to search
+    location: str, # Location to search
+    country: str = 'singapore', # Country to search
+    proxies: list[str] | str | None = None, # Proxies
+    noOfjobs: int | None = 0, # Number of pages
 ):
-    SCRAPEPLATFORM = {
-        Site.INDEED: indeedScraper,
-        Site.LINKEDIN: linkedinScraper,
-        Site.TIMESJOBS: timesJobsScraper
+    SCRAPEPLATFORM = { # Dictionary to store the site platform
+        Site.INDEED: indeedScraper, # Indeed site
+        Site.LINKEDIN: linkedinScraper, # LinkedIn site
+        Site.TIMESJOBS: timesJobsScraper # TimesJobs site
     }
-    def siteName(site: str):
-        return Site[site.upper()]
+    def siteName(site: str): # Function to get the site name in uppercase format
+        return Site[site.upper()] # Returning the site name in uppercase format if the site is present in the site platform list 
     
-    def siteType():
-        siteType = list(Site)
-        if isinstance(sitePlatform, str):
-            siteType = [siteName(sitePlatform)]
-        elif isinstance(sitePlatform, list):
-            siteType = [siteName(site) if isinstance(site, str) else site for site in sitePlatform]
-        return siteType
+    def siteType(): # Function to get the site type
+        siteType = list(Site) # List of sites
+        if isinstance(sitePlatform, str): # Checking if the site platform is a string
+            siteType = [siteName(sitePlatform)] # Getting the site name in uppercase format
+        elif isinstance(sitePlatform, list): # Checking if the site platform is a list
+            siteType = [siteName(site) if isinstance(site, str) else site for site in sitePlatform] # Getting the site name in uppercase format
+        return siteType # Returning the site type
     
-    scrapeInput = UserInput(
-        scrapSites=siteType(),
-        country = "singapore",
-        position = 'cyber security',
-        location = "singapore",
-        noOfJobs = 3
+    scrapeInput = UserInput( # User input to scrape the jobs
+        scrapSites=siteType(), # Site type
+        country = "singapore", # Country
+        position = 'cyber security', # Position
+        location = "singapore", # Location
+        noOfJobs = 3 # Number of jobs the user want to scrape
     )
     
-    def scrapePlatform(site: Site):
-        siteToScrape = SCRAPEPLATFORM[site[0]]
-        scraper = siteToScrape()
-        data = scraper.scrape(scrapeInput)
-        print("Scrape done")
-        return site, data
+    def scrapePlatform(site: Site): # Function to scrape the platform
+        siteToScrape = SCRAPEPLATFORM[site[0]] # Site to scrape
+        scraper = siteToScrape() # Scraper object
+        data = scraper.scrape(scrapeInput) # Scraping the data
+        print("Scrape done") # Printing the message to show that the scraping is done
+        return site, data # Returning the site and data
     
-    def scrapedInfo(site):
-        siteValue, scraped_info = scrapePlatform(site)
-        return siteValue, scraped_info
+    def scrapedInfo(site): # Function to get the scraped info
+        siteValue, scraped_info = scrapePlatform(site) # Getting the site value and scraped info
+        return siteValue, scraped_info # Returning the site value and scraped info
     
-    return scrapedInfo(scrapeInput.scrapSites)
+    return scrapedInfo(scrapeInput.scrapSites) # Returning the scraped info
     
-jobs = scrapeJobs(
-    sitePlatform=["indeed"],
-    position="cyber security",
-    location="singapore",
-    indeedCountry="singapore"
+jobs = scrapeJobs( # Scraping the jobs
+    sitePlatform=["indeed"], # Site platform
+    position="cyber security", # Position
+    location="singapore", # Location
+    country="singapore", # Country
+    noOfjobs=3 # Number of jobs the user want to scrape
 )
 
-print(f"Found {len(jobs)} jobs")
+print(f"Found {len(jobs)} jobs") # Printing the number of jobs found
