@@ -110,11 +110,11 @@ class indeedScraper():
           writer = csv.writer(f, delimiter=',')
           writer.writerow(['ID', 'Title', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Description', 'Job post date', 'Job URL'])
           writer.writerows(JobsDetailsList)
-        with open('jobs.txt', 'w') as f:
-          f.write('ID, Title, City, Country Code, Country Name, Postal Code, Street Address, Description, Job post date, Job URL' + '\n')
-          for i in JobsDetailsList:
-              f.writelines(j + ',' for j in i)
-              f.write('-' * 100)
+        # with open('jobs.txt', 'w') as f:
+        #   f.write('ID, Title, City, Country Code, Country Name, Postal Code, Street Address, Description, Job post date, Job URL' + '\n')
+        #   for i in JobsDetailsList:
+        #       f.writelines(j + ',' for j in i)
+        #       f.write('-' * 100)
         
         return jobsList
       
