@@ -112,7 +112,7 @@ def topic_modeling(texts):
 
 # Main function to clean and extract information from job descriptions
 def clean_job_descriptions(input_file, output_file):
-    df = pd.read_csv(input_file, encoding='latin1')
+    df = pd.read_csv(input_file, encoding='latin1', index_col=False)
     cleaned_data = []
     all_texts = []
     

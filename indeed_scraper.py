@@ -108,7 +108,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
               i[j] = 'NIL' # Setting the value to NIL if None
         with open('jobs.csv', 'w', newline='') as f: # Opening the file to write the jobs
           writer = csv.writer(f, delimiter=',') # Creating a CSV writer object to write the jobs with delimiter as comma
-          writer.writerow(['ID', 'Title', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Job Description', 'Job post date', 'Job URL']) # Writing the header
+          writer.writerow(['ID', 'Title','Company name', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Job Description', 'Job post date', 'Job URL']) # Writing the header
           writer.writerows(JobsDetailsList) # Writing the jobs details
         # with open('jobs.txt', 'w') as f:
         #   f.write('ID, Title, City, Country Code, Country Name, Postal Code, Street Address, Description, Job post date, Job URL' + '\n')
@@ -132,6 +132,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
       jobPostDate = datetime.datetime.fromtimestamp(job["datePublished"]/1000).strftime('%Y-%M-%d') # Job post date
       jobData.append(str(job['key'])) # Adding the job key to the job data
       jobData.append(job['title']) # Adding the job title to the job data
+      jobData.append(job.get('employer', '').get('name')) 
       jobData.append(job.get("location", '').get("city")) # Adding the job city to the job data
       jobData.append(job.get("location", '').get("countryCode")) # Adding the job country code to the job data
       jobData.append(job.get("location", '').get("countryName")) # Adding the job country name to the job data
@@ -164,6 +165,9 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
                 dateOnIndeed # Date on Indeed of the job
                 description {{ # Description of the job
                   html # HTML format of the description
+                }}
+                employer {{
+                  name
                 }}
                 location {{ # Location of the job
                   countryName # Country name
@@ -237,22 +241,28 @@ def scrapeJobs( # Function to scrape the jobs
     return scrapedInfo(scrapeInput.scrapSites) # Returning the scraped info
 
 def main():
-  position = input('Enter the position of the job: ')
-  try: 
-    noOfjobs = int(input('Enter the number of job results you want to get: '))
-  except ValueError:
-    print("Enter valid integer")
+  while True:
+    position = input('Enter the position of the job: ')
+    noOfjobs = input('Enter the number of job results you want to get (default 1 job): ')
+    if noOfjobs == '':
+      noOfjobs = 1
+    try: 
+      noOfjobs = int(noOfjobs)
+    except ValueError:
+      print("Enter valid integer")
+      continue
 
-  jobs = scrapeJobs( # Scraping the jobs
-      sitePlatform=["indeed"], # Site platform
-      position=position, # Position
-      location="singapore", # Location
-      country="singapore", # Country
-      noOfjobs=noOfjobs # Number of jobs the user want to scrape
-  )
+    jobs = scrapeJobs( # Scraping the jobs
+        sitePlatform=["indeed"], # Site platform
+        position=position, # Position
+        location="singapore", # Location
+        country="singapore", # Country
+        noOfjobs=noOfjobs # Number of jobs the user want to scrape
+    )
 
 
-  print(f"Found {len(jobs[1][0])} jobs") # Printing the number of jobs found
+    print(f"Found {len(jobs[1][0])} jobs") # Printing the number of jobs found
+    break
 
 
 if __name__ == '__main__':
