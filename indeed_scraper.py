@@ -127,7 +127,8 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
       description = job["description"]["html"] # Description of the job
       if description is not None: # Checking if the description is not None
         descripMD = markdownify(description) # Converting the description to markdown, from HTML format to markdown format
-        description = descripMD.strip() # Stripping the empty spaces
+        description = descripMD.strip().replace('\u2800','') # Stripping the empty spaces
+        
       jobPostDate = datetime.datetime.fromtimestamp(job["datePublished"]/1000).strftime('%Y-%M-%d') # Job post date
       jobData.append(str(job['key'])) # Adding the job key to the job data
       jobData.append(job['title']) # Adding the job title to the job data
@@ -192,9 +193,9 @@ class linkedinScraper(): # LinkedIn scraper class to scrape the jobs from Linked
 
 def scrapeJobs( # Function to scrape the jobs
     sitePlatform: str | list[str], # Site platform
-    position: str, # Position to search
-    location: str, # Location to search
-    country: str = 'singapore', # Country to search
+    position: str | None = None, # Position to search
+    location: str | None = None, # Location to search
+    country: str | None = None, # Country to search
     proxies: list[str] | str | None = None, # Proxies
     noOfjobs: int | None = 0, # Number of pages
 ):
@@ -217,9 +218,9 @@ def scrapeJobs( # Function to scrape the jobs
     scrapeInput = UserInput( # User input to scrape the jobs
         scrapSites=siteType(), # Site type
         country = "singapore", # Country
-        position = 'cyber security', # Position
+        position = position, # Position
         location = "singapore", # Location
-        noOfJobs = 3 # Number of jobs the user want to scrape
+        noOfJobs = noOfjobs # Number of jobs the user want to scrape
     )
     
     def scrapePlatform(site: Site): # Function to scrape the platform
@@ -234,13 +235,25 @@ def scrapeJobs( # Function to scrape the jobs
         return siteValue, scraped_info # Returning the site value and scraped info
     
     return scrapedInfo(scrapeInput.scrapSites) # Returning the scraped info
-    
-jobs = scrapeJobs( # Scraping the jobs
-    sitePlatform=["indeed"], # Site platform
-    position="cyber security", # Position
-    location="singapore", # Location
-    country="singapore", # Country
-    noOfjobs=3 # Number of jobs the user want to scrape
-)
 
-print(f"Found {len(jobs)} jobs") # Printing the number of jobs found
+def main():
+  position = input('Enter the position of the job: ')
+  try: 
+    noOfjobs = int(input('Enter the number of job results you want to get: '))
+  except ValueError:
+    print("Enter valid integer")
+
+  jobs = scrapeJobs( # Scraping the jobs
+      sitePlatform=["indeed"], # Site platform
+      position=position, # Position
+      location="singapore", # Location
+      country="singapore", # Country
+      noOfjobs=noOfjobs # Number of jobs the user want to scrape
+  )
+
+
+  print(f"Found {len(jobs[1][0])} jobs") # Printing the number of jobs found
+
+
+if __name__ == '__main__':
+  main()
