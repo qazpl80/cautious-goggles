@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     # Load cleaned descriptions from the output file
     cleaned_descriptions_df = pd.read_csv(output_file)  # Read cleaned descriptions
-    cleaned_descriptions = cleaned_descriptions_df['Cleaned Requirements'].dropna().tolist()  # Convert to list and drop NaNs
+    cleaned_descriptions = cleaned_descriptions_df['Cleaned Data'].dropna().tolist()  # Convert to list and drop NaNs
     
     # Extract the top 20 skills mentioned across job descriptions
     top_skills = extract_top_skills(cleaned_descriptions, top_n=20)  # Extract top skills
