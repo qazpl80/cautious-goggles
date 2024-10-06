@@ -108,7 +108,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
               i[j] = 'NIL' # Setting the value to NIL if None
         with open('jobs.csv', 'w', newline='') as f: # Opening the file to write the jobs
           writer = csv.writer(f, delimiter=',') # Creating a CSV writer object to write the jobs with delimiter as comma
-          writer.writerow(['ID', 'Title', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Description', 'Job post date', 'Job URL']) # Writing the header
+          writer.writerow(['ID', 'Title', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Job Description', 'Job post date', 'Job URL']) # Writing the header
           writer.writerows(JobsDetailsList) # Writing the jobs details
         # with open('jobs.txt', 'w') as f:
         #   f.write('ID, Title, City, Country Code, Country Name, Postal Code, Street Address, Description, Job post date, Job URL' + '\n')

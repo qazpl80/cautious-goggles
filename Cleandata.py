@@ -20,7 +20,8 @@ stop_words = set(stopwords.words('english'))
 requirement_keywords = [
     "responsible for", "experience in", "competency", "skills", "ability to", 
     "required", "must have", "proficiency", "knowledge of", "familiarity with",
-    "oversee", "manage", "supervise", "source", "identify", "mentor", "agile", "description"
+    "oversee", "manage", "supervise", "source", "identify", "mentor", "agile", "description",
+    "expertise in", "develop", "implement", "coordinate", "collaborate"
 ]
 
 # Clean text for further processing
@@ -36,6 +37,7 @@ def clean_text(text):
     cleaned_words = [lemmatizer.lemmatize(word.lower()) for word in words if word.lower() not in stop_words]
     
     return ' '.join(cleaned_words)
+
 
 def is_english(text):
     try:
@@ -53,7 +55,9 @@ def keyword_based_extraction(sentences):
     return ' '.join(extracted_requirements) if extracted_requirements else ''
 
 def extract_requirements(text):
-    # Match any heading with or without colons, and with or without spaces
+    # Preprocess the text to remove unwanted symbols
+    
+    # Match structured sections like "Your background", "What you will do", etc.
     pattern = re.compile(r'(\b[A-Za-z\s&]+)\s*:\s*(.+?)(?=\b[A-Za-z\s&]+(?:\s*:\s*)|$)', re.DOTALL)
     matches = pattern.findall(text)
 
@@ -61,9 +65,16 @@ def extract_requirements(text):
     extracted_requirements = []
     for heading, content in matches:
         # Add logic to filter relevant sections based on the heading or content
-        if any(keyword.lower() in heading.lower() for keyword in ["Qualifications", "Skills", "Responsibilities", "Network Design", "Troubleshooting", "Experience", "Education", "Requirements", "Job Description", "Installation and Configuration", "Security Implementation", "Upgrades", "Documentation", "Performance Optimization", "Vendor Management", "Compliance & Standards"]):
-            extracted_requirements.append(f'{heading}: {content.strip()}')
+        if any(keyword.lower() in heading.lower() for keyword in ["Qualifications", "Skills", "Responsibilities", "Network Design", "Troubleshooting", "Experience", "Education", "Requirements", "Job Description", "Installation and Configuration", "Security Implementation", "Upgrades", "Documentation", "Performance Optimization", "Vendor Management", "Compliance & Standards","Your background", "What you will do"]):
+            extracted_requirements.append(f'{heading.strip()}: {content.strip()}')
     
+    # Bullet point detection for non-labeled qualifications or skills
+    #bullet_point_pattern = re.compile(r'^\s*[\*\-]\s*(.+)', re.MULTILINE)
+    #bullet_points = bullet_point_pattern.findall(text)
+    
+    #if bullet_points:
+    #    extracted_requirements.append("Bullet Points: " + " | ".join(bullet_points))
+
     # If regex extraction fails or doesn't capture everything, fall back to keyword-based extraction
     if not extracted_requirements:
         # Tokenize the text into sentences and apply keyword-based extraction
@@ -73,14 +84,14 @@ def extract_requirements(text):
         if extracted_keywords:
             extracted_requirements.append(extracted_keywords)
 
-    return ' '.join(extracted_requirements) if extracted_requirements else ''
+    return ' '.join(extracted_requirements) if extracted_requirements else 'No extracted requirements'
 
 # Extract keywords using KeyBERT
 def extract_keywords(text):
-    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 2), stop_words='english', top_n=5)
+    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 3), stop_words='english', nr_candidates=50, top_n=5)
     return ', '.join([kw[0] for kw in keywords])
 
-# Perform NER using spaCy (MIGHT NEED TO REMOVE THIS FUNCTION)
+# Perform NER using spaCy (MIGHT NEED TO REMOVE THIS)
 def extract_ner(text):
     doc = nlp(text)
     skills = [ent.text for ent in doc.ents if ent.label_ in ['ORG', 'GPE', 'DATE', 'SKILL']]
