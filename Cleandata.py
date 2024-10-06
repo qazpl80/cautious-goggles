@@ -153,11 +153,15 @@ def clean_job_descriptions(input_file, output_file):
             cleaned_data.append({'Cleaned Data': 'Non-English data', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
     
     # Perform LDA topic modeling after processing all job descriptions
+
     lda_topics = topic_modeling(all_texts)
-    
     # Add LDA topics to the cleaned data
-    for i, topic in enumerate(lda_topics):
-        cleaned_data[i]['LDA Topics'] = topic
+    if len(cleaned_data) < 5:
+        for i in range(len(cleaned_data)):
+            cleaned_data[i]['LDA Topics'] = lda_topics[i]
+    else:
+        for i, topic in enumerate(lda_topics):
+            cleaned_data[i]['LDA Topics'] = topic
     
     # Save the results to CSV
     cleaned_df = pd.DataFrame(cleaned_data)
