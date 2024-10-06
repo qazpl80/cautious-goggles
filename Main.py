@@ -4,7 +4,7 @@ import indeed_scraper
 def inputSiteType():
     scrapeSites = ['indeed','timesjobs']
     while True:
-        scraperType = input('Which site to scrape? (Indeed, TimesJobs): ').lower()
+        scraperType = input('Which site to scrape? (Indeed, TimesJobs): '.lower())
         if scraperType in scrapeSites:
             return scraperType
         else:

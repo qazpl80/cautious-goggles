@@ -21,7 +21,7 @@ requirement_keywords = [
     "responsible for", "experience in", "competency", "skills", "ability to", 
     "required", "must have", "proficiency", "knowledge of", "familiarity with",
     "oversee", "manage", "supervise", "source", "identify", "mentor", "agile", "description",
-    "expertise in", "develop", "implement", "coordinate", "collaborate"
+    "expertise in", "develop", "implement", "coordinate", "collaborate", "qualifications"
 ]
 
 # Clean text for further processing
@@ -109,7 +109,12 @@ def extract_ner(text):
 
 # Perform topic modeling using LDA
 def topic_modeling(texts):
-    vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
+    # Adjust max_df and min_df based on the number of documents
+    num_docs = len(texts)
+    max_df = 0.95 if num_docs > 1 else 1.0  # Use 1.0 if only one document
+    min_df = 2 if num_docs > 2 else 1  # Use 1 if less than 2 documents
+    
+    vectorizer = CountVectorizer(max_df=max_df, min_df=min_df, stop_words='english')
     dtm = vectorizer.fit_transform(texts)
     lda = LatentDirichletAllocation(n_components=5, random_state=42)
     lda.fit(dtm)
