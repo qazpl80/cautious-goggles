@@ -1,72 +1,21 @@
 import pandas as pd 
-import nltk
+import json
 from sklearn.feature_extraction.text import TfidfVectorizer
-from Cleandata import clean_job_descriptions
 
-# Download NLTK resources
-nltk.download('punkt')  # Download tokenizer
-nltk.download('stopwords')  # Download stopwords
-nltk.download('wordnet')  # Download wordnet for lemmatization
+def load_skills(filepath):
+    """Load list of skills"""
+    try:
+        with open(filepath, 'r') as f:
+            skills_data = json.load(f)
+        return {skill for skill_set in skills_data.values() for skill in skill_set}
+    except FileNotFoundError:
+        print(f"File not found: {filepath}")
+        return set()
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON from the file: {filepath}")
+        return set()
 
-# Initialize lemmatizer and stopwords
-lemmatizer = nltk.WordNetLemmatizer()  # Initialize lemmatizer
-stop_words = set(nltk.corpus.stopwords.words('english'))  # Set of English stopwords
-
-# Define a list of general skills
-GENERAL_SKILLS = {
-    'communication', 'teamwork', 'problem solving', 'leadership', 'time management',
-    'adaptability', 'creativity', 'work ethic', 'interpersonal skills', 'critical thinking',
-    'organization', 'attention to detail', 'customer service', 'project management',
-    'negotiation', 'conflict resolution', 'decision making', 'multitasking', 'presentation skills',
-    'analytical skills'
-}
-
-# Define a list of IT and infocomm skills
-ICT_SKILLS = {
-    'python', 'java', 'c#', 'javascript', 'html', 'css', 'sql', 'linux', 'devops',
-    'machine learning', 'data analysis', 'cloud computing', 'react', 'angular',
-    'typescript', 'git', 'docker', 'kubernetes', 'agile', 'scrum', 'database',
-    'networking', 'cybersecurity', 'artificial intelligence', 'web development',
-    'mobile development', 'api', 'software development', 'big data', 'data science',
-    'information technology', 'it support', 'system administration', 'telecommunications',
-    'information systems', 'it project management'
-}
-
-# Define a list of business skills
-BUSINESS_SKILLS = {
-    'business analysis', 'financial analysis', 'marketing', 'sales', 'strategic planning',
-    'business development', 'accounting', 'budgeting', 'forecasting', 'risk management',
-    'supply chain management', 'operations management', 'human resources', 'customer relationship management'
-}
-
-# Define a list of design skills
-DESIGN_SKILLS = {
-    'graphic design', 'ui design', 'ux design', 'web design', 'adobe photoshop', 'illustrator',
-    'indesign', 'sketch', 'figma', 'prototyping', 'wireframing', 'visual design', 'branding'
-}
-
-# Define a list of engineering skills
-ENGINEERING_SKILLS = {
-    'mechanical engineering', 'electrical engineering', 'civil engineering', 'chemical engineering',
-    'biomedical engineering', 'aerospace engineering', 'structural engineering', 'project management',
-    'cad', 'solidworks', 'matlab', 'ansys', 'finite element analysis', 'thermodynamics', 'fluid mechanics'
-}
-
-# Define a list of food, chemical, and biology skills
-FOOD_CHEM_BIO_SKILLS = {
-    'food science', 'nutrition', 'dietitian', 'biochemistry', 'molecular biology', 'genetics',
-    'microbiology', 'chemical analysis', 'laboratory techniques', 'quality control', 'food safety',
-    'chemical engineering', 'biotechnology', 'pharmaceuticals'
-}
-
-# Define a list of health and social sciences skills
-HEALTH_SOCIAL_SCIENCES_SKILLS = {
-    'nursing', 'public health', 'social work', 'psychology', 'counseling', 'healthcare management',
-    'clinical research', 'epidemiology', 'mental health', 'community outreach', 'patient care',
-    'health education', 'case management'
-}
-
-def extract_top_skills(cleaned_descriptions, top_n=20):
+def extract_top_skills(cleaned_descriptions, all_skills, top_n):
     """Extracts the top N skills mentioned in the job descriptions using TF-IDF."""
     vectorizer = TfidfVectorizer(max_df=0.85, stop_words='english', max_features=1000)  # Initialize TF-IDF Vectorizer
     tfidf_matrix = vectorizer.fit_transform(cleaned_descriptions)  # Fit and transform the cleaned descriptions
@@ -77,10 +26,6 @@ def extract_top_skills(cleaned_descriptions, top_n=20):
 
     # Create a DataFrame of the TF-IDF scores
     tfidf_df = pd.DataFrame({'Skill': feature_names, 'Score': tfidf_scores})  # Create DataFrame
-
-    # Combine all skill sets
-    all_skills = ICT_SKILLS.union(GENERAL_SKILLS).union(BUSINESS_SKILLS).union(DESIGN_SKILLS).union(
-        ENGINEERING_SKILLS).union(FOOD_CHEM_BIO_SKILLS).union(HEALTH_SOCIAL_SCIENCES_SKILLS)  # Union of all skills
     
     # Filter for relevant skills
     tfidf_df = tfidf_df[tfidf_df['Skill'].isin(all_skills)]  # Filter DataFrame for relevant skills
@@ -90,20 +35,26 @@ def extract_top_skills(cleaned_descriptions, top_n=20):
 
     return top_skills  # Return top skills
 
-if __name__ == "__main__":
-    input_file = 'jobs.csv'  # Input CSV file with job descriptions
-    output_file = 'cleaned_job_descriptions.csv'  # Output file for cleaned descriptions
-
-    # Clean job descriptions using the function from cleandata.py
-    clean_job_descriptions(input_file, output_file)  # Clean job descriptions
-
-    # Load cleaned descriptions from the output file
-    cleaned_descriptions_df = pd.read_csv(output_file)  # Read cleaned descriptions
-    cleaned_descriptions = cleaned_descriptions_df['Cleaned Data'].dropna().tolist()  # Convert to list and drop NaNs
+def run_extraction(input_file, skills_file, top_n):
+    """Runs extraction process"""
+    # Load cleaned descriptions
+    cleaned_descriptions_df = pd.read_csv(input_file)
+    cleaned_descriptions = cleaned_descriptions_df['Cleaned Data'].dropna().tolist()
     
-    # Extract the top 20 skills mentioned across job descriptions
-    top_skills = extract_top_skills(cleaned_descriptions, top_n=20)  # Extract top skills
+    # Load skills
+    all_skills = load_skills(skills_file)
 
-    # Output the top skills
-    print("Top skills employers are looking for:")  # Print header
-    print(top_skills)  # Print top skills
+    # Extract and output top skills
+    if cleaned_descriptions and all_skills:
+        top_skills = extract_top_skills(cleaned_descriptions, all_skills, top_n)
+        print("Top skills employers are looking for:")
+        print(top_skills)
+    else:
+        print("No valid cleaned descriptions or skills found.")
+
+if __name__ == "__main__":
+    input_file = 'cleaned_job_descriptions.csv'  # Input CSV file with cleaned job descriptions
+    skills_file = 'skills.json' #Input JSON file for skill sets
+    top_n = 20  # Number of top skills to extract
+
+    run_extraction(input_file, skills_file, top_n)
