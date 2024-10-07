@@ -40,7 +40,7 @@ def clean_text(text):
 
 def preprocess_text(text):
     # Remove unwanted symbols like *, -, and •
-    text = re.sub(r'[\*\-•]', '', text)  # Remove *, -, and • symbols
+    text = re.sub(r'[\*\•]', '', text)  # Remove *, and • symbols
     
     # Remove escape sequences and normalize spaces
     text = re.sub(r'\\[tn]', ' ', text)  # Remove escape characters like \n and \t
