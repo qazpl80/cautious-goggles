@@ -240,12 +240,10 @@ def scrapeJobs( # Function to scrape the jobs
     
     return scrapedInfo(scrapeInput.scrapSites) # Returning the scraped info
 
-def main():
+def main(position, noOfjobs): # Main function to run the program
   while True:
-    position = input('Enter the position of the job: ')
-    noOfjobs = input('Enter the number of job results you want to get (default 1 job): ')
     if noOfjobs == '':
-      noOfjobs = 1
+      noOfjobs = 25
     try: 
       noOfjobs = int(noOfjobs)
     except ValueError:
@@ -259,10 +257,7 @@ def main():
         country="singapore", # Country
         noOfjobs=noOfjobs # Number of jobs the user want to scrape
     )
-
-
-    print(f"Found {len(jobs[1][0])} jobs") # Printing the number of jobs found
-    break
+    return jobs
 
 
 if __name__ == '__main__':

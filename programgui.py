@@ -2,10 +2,11 @@ from tkinter import messagebox
 from tkinter import ttk
 import customtkinter as ctk
 import pandas as pd
-from timesJob_scraper import find_job, formatData, filterViaSkills, save_to_csv as save_timesjobs_to_csv
-from indeed_scraper import scrapeJobs
-from Cleandata import clean_job_descriptions
-from TopSkills import run_extraction
+import timesJob_scraper
+import indeed_scraper
+import Cleandata
+import TopSkills
+from collections import defaultdict
 
 def get_selected_sites():
     selected_sites = []
@@ -50,67 +51,59 @@ def on_submit():
     if not selected_sites:
         return
 
-    jobs = []
     total_jobs_count = 0
-    jobs_dict = {}
+    indeed_job_list = []
+    timesjobs_jobs = []
 
     for site in selected_sites:
         if site == 'indeed':
             noOfjobs = 25 * page_number
-            indeed_jobs = scrapeJobs('indeed', position, location, noOfjobs=noOfjobs)
-            for job in indeed_jobs:
-                if isinstance(job, dict):
-                    job['Source'] = 'Indeed'
-            jobs_dict['Indeed'] = indeed_jobs
-            total_jobs_count += len(indeed_jobs)
+            indeed_jobs = indeed_scraper.main(position, noOfjobs)
+            jobs_info = defaultdict(str)
+            while True:
+                if len(indeed_job_list) <= 25:
+                    for job in indeed_jobs[1][0]:
+                        jobs_info['Company Name'] = job.get('job').get('employer').get('name')
+                        jobs_info['Position'] = job.get('job').get('title')
+                        jobs_info['Location'] = job.get('job').get('location').get('countryName')
+                        jobs_info['Job Description'] = job.get('job').get('description').get('html')
+                        jobs_info['Job URL'] = f'https://sg.indeed.com/viewjob?jk={job.get('job').get('key')}'
+                        indeed_job_list.append(jobs_info.copy())
+                else:
+                    break
+            total_jobs_count += len(indeed_job_list)
+
         elif site == 'timesjobs':
-            timesjobs_jobs, _ = find_job(position.lower(), location.lower(), user_skills, page_number)
-            formatted_jobs = formatData(timesjobs_jobs)
-            for job in formatted_jobs:
-                if isinstance(job, dict):
-                    job['Source'] = 'TimesJobs'
-            jobs_dict['TimesJobs'] = formatted_jobs
-            total_jobs_count += len(formatted_jobs)
+            timesjobs_jobs, timesjobs_count = timesJob_scraper.main(position, location, user_skills, page_number)
+            total_jobs_count += timesjobs_count
         else:
             messagebox.showerror("Input Error", "Invalid site selected.")
             return
 
         progress.set(progress.get() + 20)
 
-    if jobs_dict:
-        with pd.ExcelWriter('jobs.xlsx', engine='xlsxwriter') as writer:
-            for site, jobs in jobs_dict.items():
-                # Define columns based on the site
-                if site == 'Indeed':
-                    columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]
-                elif site == 'TimesJobs':
-                    columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job URL"]
-                else:
-                    columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]
+    if indeed_job_list or timesjobs_jobs:
+        for site, jobs in {'Indeed': indeed_job_list, 'TimesJobs': timesjobs_jobs}.items():
+            # Define columns based on the site
+            if site == 'Indeed':
+                columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]
+            elif site == 'TimesJobs':
+                columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job URL"]
+            else:
+                columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]
 
-                # Ensure all job dictionaries have all the required keys and merge fields
-                filtered_jobs = []
-                for job in jobs:
-                    if isinstance(job, dict):
-                        if site == 'TimesJobs':
-                            job['Location'] = f"{job.get('City', 'NIL')}, {job.get('Postal Code', 'NIL')}, {job.get('Country', 'NIL')}".strip(', ')
-                        for column in columns:
-                            if column not in job or not job[column]:
-                                job[column] = 'NIL'
-                        filtered_jobs.append({key: job[key] for key in columns})
-
-                jobs_df = pd.DataFrame(filtered_jobs)
-                jobs_df = jobs_df[columns]  # Ensure the DataFrame has the correct column order
-                jobs_df.to_excel(writer, sheet_name=site, index=False)
+        # Create DataFrame and write to Excel
+        df = pd.DataFrame(indeed_job_list)
+        df.to_excel('jobs.xlsx', index=False)
 
         messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. Results saved to jobs.xlsx.")
 
         if cleandata_var.get():
-            clean_job_descriptions('jobs.xlsx', 'cleaned_job_descriptions.xlsx')
+            Cleandata.clean_job_descriptions('jobs.xlsx', 'cleaned_job_descriptions.xlsx')
             messagebox.showinfo("Results", "Cleaned job descriptions saved to cleaned_job_descriptions.xlsx.")
 
         if topskills_var.get():
-            run_extraction('cleaned_job_descriptions.xlsx', 'skills.json', 20)
+            TopSkills.run_extraction('cleaned_job_descriptions.xlsx', 'skills.json', 20)
     else:
         messagebox.showinfo("Results", "No jobs found.")
 

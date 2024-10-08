@@ -76,40 +76,25 @@ def save_to_csv(info):
             writer.writerows(info)  # write all the job that fits the user via their skillset into the csv
         print("File saved")
 
-def main():
-    while True:
-        position = input("Enter position/job (Type \"exit\" to stop the program): ")
-        if position.lower() == 'exit':
-            break
-        location = input("Enter location (Type \"exit\" to stop the program): ")
-        if location.lower() == 'exit':
-            break
-        user_skills = input("Enter your skills (Type \"exit\" to stop the program): ").split(',')
-        user_skills = [i.lower() for i in user_skills]
-        if user_skills[0].lower() == 'exit':
-            break
-        # check for at least 1 input in either position, location or skills
-        if (position == '' and location == '' and user_skills == ['']):
-            print("Please enter at least 1 input")
+def main(position, location, user_skills, page_number):
+    # check for at least 1 input in either position, location or skills
+    if (position == '' and location == '' and user_skills == ['']):
+        print("Please enter at least 1 input")
+    else:
+        if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
+            page_number = 1
         else:
-            page_number = input("Enter number of pages to search: ")
-            if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
-                page_number = 1
-            else:
-                try:
-                    page_number = int(page_number)  # input validation for page_number
-                except ValueError:
-                    print("Enter a valid integer")
-                    continue
-            jobs, jobs_count = find_job(position.lower(), location.lower(), user_skills, page_number)
-            formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
-            if user_skills == ['']:  # if user decided not to put any skills
-                save_to_csv(formattedData)  # then just save all the job posting found into the csv
-            else:
-                filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
-                save_to_csv(filteredJobs)  # save the results in a csv file
-                print(f"Total jobs related to your skillset extracted: {jobs_count}")
-            break
+            try:
+                page_number = int(page_number)  # input validation for page_number
+            except ValueError:
+                print("Enter a valid integer")
+        jobs, jobs_count = find_job(position.lower(), location.lower(), user_skills, page_number)
+        formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
+        if user_skills == ['']:  # if user decided not to put any skills
+            return jobs, jobs_count
+        else:
+            filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
+            return filteredJobs
 
 if __name__ == "__main__":
     main()

@@ -163,3 +163,4 @@ cython_debug/
 jobs.csv
 jobs1.csv
 cleaned_job_descriptions.csv
+jobs.xlsx
