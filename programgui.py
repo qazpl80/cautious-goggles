@@ -52,9 +52,6 @@ def on_submit():
             page_number = 1
     else:
         try:
-            if int(page_number) > 4:
-                messagebox.showerror("Input Error", "Please enter a number less than or equal to 4 for the page number.")
-                update_result_box("Please enter a number less than or equal to 4 for the page number.")
             page_number = int(page_number)  # input validation for page_number
         except ValueError:
             messagebox.showerror("Input Error", "Please enter a valid number for the page number.")
@@ -76,18 +73,11 @@ def on_submit():
 
         #IF THE SITE IS INDEED
         if site == 'indeed':
-            if int(page_number) == 1:
-                indeed_page_number = 25
-            elif int(page_number) > 1 and int(page_number) <= 4:
-                indeed_page_number = int(page_number) * 25
-            else:
-                messagebox.showerror("Input Error", "Please enter a number less than or equal to 4 for the page number.")
-                update_result_box("Please enter a number less than or equal to 4 for the page number.")
-            
-            indeed_jobs = indeed_scraper.main(position, indeed_page_number)   #get the job details from the indeed_scraper
+            noOfjobs = 25 * page_number                             #following the same logic as timesjobs, we will get 25 jobs per page
+            indeed_jobs = indeed_scraper.main(position, noOfjobs)   #get the job details from the indeed_scraper
             jobs_info = defaultdict(str)                            #create a dictionary to store the job details
             while True:
-                if len(indeed_job_list) <= indeed_page_number:
+                if len(indeed_job_list) <= noOfjobs:
                     for job in indeed_jobs[1][0]:                                                                                           #the job details are stored in the 2nd index of the list
                         jobs_info['Company Name'] = job.get('job').get('employer').get('name') if job.get('job').get('employer') else 'NIL' #if the company name is not available, then it will be NIL
                         jobs_info['Position'] = job.get('job').get('title')                                                                 #get the title of the job
@@ -109,7 +99,7 @@ def on_submit():
                 for job in timesjobs_jobs:
                     jobs_info['Position'] = job[0]                              #get the title of the job
                     jobs_info['Company Name'] = job[1]                          #get the company name
-                    jobs_info['Location'] = location if location else 'NIL'     #if the location is not available, then it will be NIL
+                    jobs_info['Location'] = job[5]   #if the location is not available, then it will be NIL
                     jobs_info['Skillset Required'] = job[2]                     #get the skillset required for the job
                     jobs_info['Job Description'] = job[3]                       #get the job description
                     jobs_info['Job URL'] = job[4]                               #get the url of the job
@@ -159,16 +149,16 @@ def initialize_gui():
     ctk.set_default_color_theme("dark-blue")
 
     guiwindow = ctk.CTk()
-    guiwindow.title("Job Extractor")
+    guiwindow.title("Job Search")
     guiwindow.geometry("650x500")
     guiwindow.minsize(650, 500)
 
     JobPositionLabel = ctk.CTkLabel(guiwindow, text="Enter Position/Job: ")
     JobLocationLabel = ctk.CTkLabel(guiwindow, text="Enter Location: ")
     JobSkillsLabel = ctk.CTkLabel(guiwindow, text="Enter your Skills: ")
-    PageNumberLabel = ctk.CTkLabel(guiwindow, text="Enter Number of Pages (MAX 4): ")
+    PageNumberLabel = ctk.CTkLabel(guiwindow, text="Enter Number of Pages: ")
     SiteLabel = ctk.CTkLabel(guiwindow, text="Select site to scrape: ")
-    PostProcessLabel = ctk.CTkLabel(guiwindow, text="Select other options: ")
+    PostProcessLabel = ctk.CTkLabel(guiwindow, text="Select post-processing options: ")
 
     JobPositionEntry = ctk.CTkEntry(guiwindow)
     JobLocationEntry = ctk.CTkEntry(guiwindow)
