@@ -39,8 +39,8 @@ def clean_text(text):
     return ' '.join(cleaned_words)
 
 def preprocess_text(text):
-    # Remove unwanted symbols like *, -, and •
-    text = re.sub(r'[\*\•]', '', text)  # Remove *, and • symbols
+    # Remove unwanted symbols like * and •
+    text = re.sub(r'[\*\•]', '', text)  # Remove * and • symbols
     
     # Remove escape sequences and normalize spaces
     text = re.sub(r'\\[tn]', ' ', text)  # Remove escape characters like \n and \t
