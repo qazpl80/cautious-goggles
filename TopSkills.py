@@ -1,5 +1,6 @@
 import pandas as pd 
 import json
+import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def load_skills(filepath):
@@ -21,19 +22,28 @@ def extract_top_skills(cleaned_descriptions, all_skills, top_n):
     tfidf_matrix = vectorizer.fit_transform(cleaned_descriptions)  # Fit and transform the cleaned descriptions
 
     # Sum the TF-IDF score across all job descriptions for each word
-    tfidf_scores = tfidf_matrix.sum(axis=0).A1  # Sum TF-IDF scores
-    feature_names = vectorizer.get_feature_names_out()  # Get feature names
+    tfidf_scores = tfidf_matrix.sum(axis=0).A1
+    feature_names = vectorizer.get_feature_names_out()
 
     # Create a DataFrame of the TF-IDF scores
-    tfidf_df = pd.DataFrame({'Skill': feature_names, 'Score': tfidf_scores})  # Create DataFrame
+    tfidf_df = pd.DataFrame({'Skill': feature_names, 'Score': tfidf_scores})
     
     # Filter for relevant skills
-    tfidf_df = tfidf_df[tfidf_df['Skill'].isin(all_skills)]  # Filter DataFrame for relevant skills
+    tfidf_df = tfidf_df[tfidf_df['Skill'].isin(all_skills)]
 
     # Sort by score and return the top N skills
-    top_skills = tfidf_df.sort_values(by='Score', ascending=False).head(top_n)  # Sort and get top N skills
+    top_skills = tfidf_df.sort_values(by='Score', ascending=False).head(top_n)
+    return top_skills 
 
-    return top_skills  # Return top skills
+def plot_top_skills(top_skills):
+    """Generate a bar graph for the top skills."""
+    plt.figure(figsize=(10, 6))
+    plt.barh(top_skills['Skill'], top_skills['Score'], color='skyblue')
+    plt.xlabel('TF-IDF Score')
+    plt.ylabel('Skills')
+    plt.title('Top Skills Employers are Looking For')
+    plt.gca().invert_yaxis()  # Invert y-axis to show highest scores at the top
+    plt.show()
 
 def run_extraction(input_file, skills_file, top_n):
     """Runs extraction process"""
@@ -49,6 +59,10 @@ def run_extraction(input_file, skills_file, top_n):
         top_skills = extract_top_skills(cleaned_descriptions, all_skills, top_n)
         print("Top skills employers are looking for:")
         print(top_skills)
+
+        # Plot the top skills
+        plot_top_skills(top_skills)
+        
     else:
         print("No valid cleaned descriptions or skills found.")
 
