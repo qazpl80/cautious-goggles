@@ -13,8 +13,8 @@ def find_job(position, location, user_skills, page_number):
     page_count = 1
     info = []  # list containing all the search results (position, company name, and skillset required)
     seen_jobs = set()  # set to track unique job postings
+    job_count = 0
     while page_count <= page_number:
-        job_count = 0
         dup_count = 0
         url = f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1'
         response = requests.get(url, headers=header)
@@ -73,8 +73,8 @@ def filterViaSkills(JobInfo, user_skills):
     filteredJobs = []  # this is a list containing the list of jobs that match the skillset of the user input
     for job in JobInfo:  # for each job in the job list
         for skill in user_skills:  # for each skill entered by the user input
-            for skill in job[2]:
-                if skill.lower() in job[2]:  # lowercase all the words so to match the words
+            for jobskill in job[2]:  # for each skill in the required skillset of the job
+                if skill in jobskill:  # lowercase all the words so to match the words
                     filteredJobs.append(job)  # if the user's skill is in the required skill list of the job, then add to the filteredJobs list
     return filteredJobs
 
@@ -92,7 +92,6 @@ def main(position, location, user_skills, page_number):
             return jobs, jobs_count, dups_count
         else:
             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
-            print('TimesJobs: ',filteredJobs)
             return filteredJobs, jobs_count, dups_count
 
 if __name__ == "__main__":

@@ -95,7 +95,6 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
             print(f'{response.status_code} STATUS CODE NOT RIGHT {response.reason}') # Printing the status code if not right
             return jobs # Returning the jobs if status code is not right
         data = response.json() # Getting the response in JSON format
-        print('bitch', data)
         if "data" in data and "jobSearch" in data["data"] and "results" in data["data"]["jobSearch"]: # Checking the data structure
             jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
         else: 
@@ -103,7 +102,6 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
         jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
         jobsList.append(jobs) # Adding the jobs to the list
         JobsDetailsList = [self.getJobsDetails(job["job"]) for job in jobs] # Getting the jobs details by calling the method for each job
-        print('fuck', JobsDetailsList)
         for i in JobsDetailsList: # Loop to check the None values
           for j in range(len(i)): 
             if i[j] is None:  # Checking if the value is None
@@ -131,7 +129,6 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
         descripMD = markdownify(description) # Converting the description to markdown, from HTML format to markdown format
         description = descripMD.strip().replace('\u2800','').replace('\ufeff','') # Stripping the empty spaces
       
-      # print('duck',job)
       jobPostDate = datetime.datetime.fromtimestamp(job["datePublished"]/1000).strftime('%Y-%M-%d') # Job post date
       jobData.append(str(job['key'])) # Adding the job key to the job data
       jobData.append(job['title']) # Adding the job title to the job data
@@ -243,23 +240,13 @@ def scrapeJobs( # Function to scrape the jobs
     
     return scrapedInfo(scrapeInput.scrapSites) # Returning the scraped info
 
-def main(positioninput, noOfjobsinput): # Main function to run the program
-  if noOfjobsinput == '':
-    noOfjobsinput *= 25
-  if noOfjobsinput > 100:
-    noOfjobsinput = 100
-    print("Indeed max job is 100")
-  try: 
-    noOfjobsinput = int(noOfjobsinput)
-  except ValueError:
-    print("Enter valid integer")
-
+def main(positioninput, noOfjobs): # Main function to run the program
   jobs = scrapeJobs( # Scraping the jobs
       sitePlatform=["indeed"], # Site platform
       position=positioninput, # Position
       location="singapore", # Location
       country="singapore", # Country
-      noOfjobs=noOfjobsinput # Number of jobs the user want to scrape
+      noOfjobs=noOfjobs # Number of jobs the user want to scrape
   )
   return jobs
 
