@@ -106,7 +106,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
           for j in range(len(i)): 
             if i[j] is None:  # Checking if the value is None
               i[j] = 'NIL' # Setting the value to NIL if None
-        with open('jobs.csv', 'w', newline='') as f: # Opening the file to write the jobs
+        with open('jobs.csv', 'w', newline='', encoding='utf-8') as f: # Opening the file to write the jobs
           writer = csv.writer(f, delimiter=',') # Creating a CSV writer object to write the jobs with delimiter as comma
           writer.writerow(['ID', 'Title','Company name', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Job Description', 'Job post date', 'Job URL']) # Writing the header
           writer.writerows(JobsDetailsList) # Writing the jobs details
@@ -127,7 +127,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
       description = job["description"]["html"] # Description of the job
       if description is not None: # Checking if the description is not None
         descripMD = markdownify(description) # Converting the description to markdown, from HTML format to markdown format
-        description = descripMD.strip().replace('\u2800','').replace('\ufeff','') # Stripping the empty spaces
+        description = descripMD.strip()# Stripping the empty spaces
       
       jobPostDate = datetime.datetime.fromtimestamp(job["datePublished"]/1000).strftime('%Y-%M-%d') # Job post date
       jobData.append(str(job['key'])) # Adding the job key to the job data
