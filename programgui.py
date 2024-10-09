@@ -39,7 +39,7 @@ def on_submit():
     clear_result_box()  # Clear the result box
     position = JobPositionEntry.get().strip()
     location = JobLocationEntry.get().strip()
-    user_skills = JobSkillsEntry.get().replace(' ', '').split(',')
+    user_skills = JobSkillsEntry.get().split(',')
 
     # Ensure at least one of the fields is filled
     if not position and not location and not any(user_skills):
@@ -99,7 +99,7 @@ def on_submit():
                 for job in timesjobs_jobs:
                     jobs_info['Position'] = job[0]                              #get the title of the job
                     jobs_info['Company Name'] = job[1]                          #get the company name
-                    jobs_info['Location'] = location if location else 'NIL'     #if the location is not available, then it will be NIL
+                    jobs_info['Location'] = job[5]   #if the location is not available, then it will be NIL
                     jobs_info['Skillset Required'] = job[2]                     #get the skillset required for the job
                     jobs_info['Job Description'] = job[3]                       #get the job description
                     jobs_info['Job URL'] = job[4]                               #get the url of the job

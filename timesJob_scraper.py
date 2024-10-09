@@ -16,9 +16,15 @@ def find_job(position, location, user_skills, page_number):
     while page_count <= page_number:
         job_count = 0
         dup_count = 0
-        html_text = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header).text
+        url = f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1'
+        response = requests.get(url, headers=header)
+        if response.status_code != 200:
+            print("Response error", response.status_code, response.reason)
+            return
+        html_text = response.text
         soup = BeautifulSoup(html_text, 'html.parser')
         jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx')  # finds all the jobs
+
         for index, job in enumerate(jobs):
             eachJob = []  # to isolate each job and add into info list as a list of its own
             title = ''  # title/position offered
@@ -31,6 +37,8 @@ def find_job(position, location, user_skills, page_number):
             jobdescription = jobSoup.find('div', class_='jd-desc job-description-main').text.replace('\n', ' ').replace('\t', ' ').replace('  ', ' ')  # to get the job description
             jobdescription = ' '.join(jobdescription.split())  # reformat job description to make it more compact
             company_name = job.find('h3', class_='joblist-comp-name').text.replace('\n', '').replace('(More Jobs)', '').replace('  ', '')
+            location_span = job.find_all('span')
+            location = [span.get('title') for span in location_span if span.get('title')]
             
             # Check for duplicate jobs
             job_key = (title, company_name)
@@ -45,6 +53,7 @@ def find_job(position, location, user_skills, page_number):
             eachJob.append(requiredSkills)  # append the required skillset of the job as a list to another list (which contains the details of the job posting)
             eachJob.append(jobdescription)  # append the job description to the list of job posting
             eachJob.append(jobUrl)  # append the url of the job posting to the list of job posting
+            eachJob.append(location)
             info.append(eachJob)  # finally append that one job posting to the list of job postings
             job_count += 1
         page_count += 1
@@ -57,29 +66,34 @@ def formatData(info):  # this is to format data of the required skillset so we c
                 jobs[2].remove('')
                 skill.replace('.', '')  # removing the full stops
         jobs[2] = [skill.lower() for skill in jobs[2]]  # to make all the words lowercase so we can match the skills of the user input
+
     return info
 
 def filterViaSkills(JobInfo, user_skills):
     filteredJobs = []  # this is a list containing the list of jobs that match the skillset of the user input
     for job in JobInfo:  # for each job in the job list
         for skill in user_skills:  # for each skill entered by the user input
-            if skill.lower() in job[2]:  # lowercase all the words so to match the words
-                filteredJobs.append(job)  # if the user's skill is in the required skill list of the job, then add to the filteredJobs list
+            for skill in job[2]:
+                if skill.lower() in job[2]:  # lowercase all the words so to match the words
+                    filteredJobs.append(job)  # if the user's skill is in the required skill list of the job, then add to the filteredJobs list
     return filteredJobs
 
-def main(position, location, user_skills, page_number):
+def main(position, location, user_skills, page_number): 
+    if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
+        page_number = 1
     # check for at least 1 input in either position, location or skills
     if (position == '' and location == '' and user_skills == ['']):
         print("Please enter at least 1 input")
     else:
         jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, page_number)
         formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
-        if user_skills == ['']:  # if user decided not to put any skills
+        if user_skills == [''] or user_skills == '':  # if user decided not to put any skills
+            print('TimesJobs: ',jobs)
             return jobs, jobs_count, dups_count
         else:
             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
-            print(filteredJobs)
+            print('TimesJobs: ',filteredJobs)
             return filteredJobs, jobs_count, dups_count
 
 if __name__ == "__main__":
-    main()
+    main('engineer', 'singapore',['it engineer'], '')
