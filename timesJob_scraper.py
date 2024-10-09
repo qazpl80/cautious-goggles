@@ -17,6 +17,7 @@ def find_job(position, location, user_skills, page_number):
     seen_jobs = set()  # set to track unique job postings
     while page_count <= page_number:
         job_count = 0
+        dup_count = 0
         html_text = requests.get(f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1', headers=header).text
         soup = BeautifulSoup(html_text, 'html.parser')
         jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx')  # finds all the jobs
@@ -36,6 +37,8 @@ def find_job(position, location, user_skills, page_number):
             # Check for duplicate jobs
             job_key = (title, company_name)
             if job_key in seen_jobs:
+                dup_count += 1
+                # print('duplicate', job_key)
                 continue
             seen_jobs.add(job_key)
             
@@ -47,7 +50,7 @@ def find_job(position, location, user_skills, page_number):
             info.append(eachJob)  # finally append that one job posting to the list of job postings
             job_count += 1
         page_count += 1
-    return info, job_count
+    return info, job_count, dup_count
 
 def formatData(info):  # this is to format data of the required skillset so we can match and filter the skills
     for jobs in info:
@@ -88,13 +91,13 @@ def main(position, location, user_skills, page_number):
                 page_number = int(page_number)  # input validation for page_number
             except ValueError:
                 print("Enter a valid integer")
-        jobs, jobs_count = find_job(position.lower(), location.lower(), user_skills, page_number)
+        jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, page_number)
         formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
         if user_skills == ['']:  # if user decided not to put any skills
-            return jobs, jobs_count
+            return jobs, jobs_count, dups_count
         else:
             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
-            return filteredJobs
+            return filteredJobs, jobs_count, dups_count
 
 if __name__ == "__main__":
     main()

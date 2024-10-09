@@ -30,20 +30,6 @@ def on_submit():
 
     page_number = str(PageNumberEntry.get())
 
-    if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
-        page_number = 1
-
-    try:
-        page_number = int(page_number)  # input validation for page_number
-        if page_number < 1:
-            page_number = 1
-        elif page_number > 20:
-            page_number = 20
-            messagebox.showinfo("Input Info", "The maximum number of pages to search is 20. Setting to 20.")
-    except ValueError:
-        messagebox.showerror("Input Error", "Please enter a valid number for pages.")
-        return
-
     progress.set(0)
     progress['maximum'] = page_number * 20
 
@@ -54,16 +40,19 @@ def on_submit():
     total_jobs_count = 0
     indeed_job_list = []
     timesjobs_jobs = []
+    timesjob_list = []
 
     for site in selected_sites:
+
+        #IF THE SITE IS INDEED
         if site == 'indeed':
             noOfjobs = 25 * page_number
             indeed_jobs = indeed_scraper.main(position, noOfjobs)
             jobs_info = defaultdict(str)
             while True:
-                if len(indeed_job_list) <= 25:
+                if len(indeed_job_list) <= noOfjobs:
                     for job in indeed_jobs[1][0]:
-                        jobs_info['Company Name'] = job.get('job').get('employer').get('name')
+                        jobs_info['Company Name'] = job.get('job').get('employer').get('name') if job.get('job').get('employer') else 'NIL'
                         jobs_info['Position'] = job.get('job').get('title')
                         jobs_info['Location'] = job.get('job').get('location').get('countryName')
                         jobs_info['Job Description'] = job.get('job').get('description').get('html')
@@ -72,31 +61,45 @@ def on_submit():
                 else:
                     break
             total_jobs_count += len(indeed_job_list)
-
+            
+        #IF THE SITE IS TIMESJOBS
         elif site == 'timesjobs':
-            timesjobs_jobs, timesjobs_count = timesJob_scraper.main(position, location, user_skills, page_number)
-            total_jobs_count += timesjobs_count
+            timesjobs_count = 0
+            jobs_info = defaultdict(str)
+            while True:
+                timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number)
+                for job in timesjobs_jobs:
+                    jobs_info['Position'] = job[0]
+                    jobs_info['Company Name'] = job[1]
+                    jobs_info['Location'] = location if location else 'NIL'
+                    jobs_info['Skillset Required'] = ', '.join(job[2])
+                    jobs_info['Job Description'] = job[3]
+                    jobs_info['Job URL'] = job[4]
+                    timesjob_list.append(jobs_info.copy())
+                total_jobs_count += timesjobs_count
+                break
         else:
             messagebox.showerror("Input Error", "Invalid site selected.")
             return
 
         progress.set(progress.get() + 20)
 
-    if indeed_job_list or timesjobs_jobs:
-        for site, jobs in {'Indeed': indeed_job_list, 'TimesJobs': timesjobs_jobs}.items():
+    if indeed_job_list or timesjob_list:
+        for site, jobs in {'Indeed': indeed_job_list, 'TimesJobs': timesjob_list}.items():
             # Define columns based on the site
             if site == 'Indeed':
                 columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]
             elif site == 'TimesJobs':
-                columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job URL"]
+                columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job Description", "Job URL"]
             else:
                 columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]
 
         # Create DataFrame and write to Excel
         df = pd.DataFrame(indeed_job_list)
+        df = pd.DataFrame(timesjob_list)
         df.to_excel('jobs.xlsx', index=False)
 
-        messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. Results saved to jobs.xlsx.")
+        messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. Results saved to jobs.xlsx.") if not timesjob_dups else messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. {timesjob_dups} duplicates found. Results saved to jobs.xlsx.")
 
         if cleandata_var.get():
             Cleandata.clean_job_descriptions('jobs.xlsx', 'cleaned_job_descriptions.xlsx')
