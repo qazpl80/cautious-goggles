@@ -25,7 +25,6 @@ def find_job(position, location, user_skills, page_number):
         html_text = response.text
         soup = BeautifulSoup(html_text, 'html.parser')
         jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx')  # finds all the jobs
-
         for index, job in enumerate(jobs):
             eachJob = []  # to isolate each job and add into info list as a list of its own
             title = ''  # title/position offered
@@ -39,7 +38,7 @@ def find_job(position, location, user_skills, page_number):
             jobdescription = ' '.join(jobdescription.split())  # reformat job description to make it more compact
             company_name = job.find('h3', class_='joblist-comp-name').text.replace('\n', '').replace('(More Jobs)', '').replace('  ', '')
             location_span = job.find_all('span')
-            location = [span.get('title') for span in location_span if span.get('title')]
+            job_location = [span.get('title') for span in location_span if span.get('title')]
             
             # Check for duplicate jobs
             job_key = (title, company_name)
@@ -54,12 +53,10 @@ def find_job(position, location, user_skills, page_number):
             eachJob.append(requiredSkills)  # append the required skillset of the job as a list to another list (which contains the details of the job posting)
             eachJob.append(jobdescription)  # append the job description to the list of job posting
             eachJob.append(jobUrl)  # append the url of the job posting to the list of job posting
-            eachJob.append(location)
+            eachJob.append(job_location)
             info.append(eachJob)  # finally append that one job posting to the list of job postings
             job_count += 1
-        print('dog', job_count, dup_count)
         page_count += 1
-    print('motherless', job_count, dup_count)
     return info, job_count, dup_count
 
 def formatData(info):  # this is to format data of the required skillset so we can match and filter the skills
@@ -100,12 +97,10 @@ def main(position, location, user_skills, page_number):
         jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, int(page_number))
         formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
         if user_skills == [''] or user_skills == '':  # if user decided not to put any skills
-            print('TimesJobs: ',jobs)
             save_to_csv(formattedData)
             return jobs, jobs_count, dups_count
         else:
             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
-            print('TimesJobs: ',filteredJobs)
             save_to_csv(filteredJobs)
             return filteredJobs, jobs_count, dups_count
 

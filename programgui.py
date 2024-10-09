@@ -88,7 +88,6 @@ def on_submit():
             
         #IF THE SITE IS TIMESJOBS
         elif site == 'timesjobs':
-            timesjobs_count = 0
             jobs_info = defaultdict(str)
             timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number)
             for job in timesjobs_jobs:
@@ -99,8 +98,8 @@ def on_submit():
                 jobs_info['Job Description'] = job[3]                       #get the job description
                 jobs_info['Job URL'] = job[4]                               #get the url of the job
                 timesjob_list.append(jobs_info.copy())                      #append the job details to the list
-                total_jobs_count += timesjobs_count                             #counting the total number of jobs found
             update_result_box(f"Found {timesjobs_count} jobs on TimesJobs.")
+            total_jobs_count += len(timesjob_list) + timesjob_dups
         else:
             messagebox.showerror("Input Error", "Invalid site selected.")
             update_result_box("Invalid site selected.")

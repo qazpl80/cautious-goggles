@@ -102,7 +102,6 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
         jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
         jobsList.append(jobs) # Adding the jobs to the list
         JobsDetailsList = [self.getJobsDetails(job["job"]) for job in jobs] # Getting the jobs details by calling the method for each job
-        print('fuck', JobsDetailsList)
         for i in JobsDetailsList: # Loop to check the None values
           for j in range(len(i)): 
             if i[j] is None:  # Checking if the value is None
@@ -260,8 +259,6 @@ def main(position, noOfjobs): # Main function to run the program
       country="singapore", # Country
       noOfjobs=noOfjobs # Number of jobs the user want to scrape
   )
-  print('idiot',len(jobs[1][0]))
-  print('bitch',jobs)
   return jobs
 
 
