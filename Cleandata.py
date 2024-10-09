@@ -118,14 +118,12 @@ def topic_modeling(texts):
         topics.append(', '.join(top_words))
     return topics
 
-# Main function to clean and extract information from job descriptions
-def clean_job_descriptions(input_file, output_file):
-    # Read Excel file
-    df = pd.read_excel(input_file, index_col=False)
+# Process and clean job descriptions for one sheet
+def process_sheet(sheet_df):
     cleaned_data = []
     all_texts = []
     
-    for index, row in df.iterrows():
+    for index, row in sheet_df.iterrows():
         jd = row['Job Description']
         
         if is_english(jd):
@@ -162,9 +160,23 @@ def clean_job_descriptions(input_file, output_file):
         for i, topic in enumerate(lda_topics):
             cleaned_data[i]['LDA Topics'] = topic
     
-    # Save the results to an Excel file
-    cleaned_df = pd.DataFrame(cleaned_data)
-    cleaned_df.to_excel(output_file, index=False)
+    return pd.DataFrame(cleaned_data)
+
+# Main function to clean and extract information from multiple sheets in the Excel file
+def clean_job_descriptions(input_file, output_file):
+    # Read both sheets into separate DataFrames
+    sheet_names = pd.ExcelFile(input_file).sheet_names
+    df_sheet1 = pd.read_excel(input_file, sheet_name=sheet_names[0], index_col=False)
+    df_sheet2 = pd.read_excel(input_file, sheet_name=sheet_names[1], index_col=False)
+    
+    # Process both sheets
+    cleaned_sheet1 = process_sheet(df_sheet1)
+    cleaned_sheet2 = process_sheet(df_sheet2)
+    
+    # Save the cleaned data to the output Excel file
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        cleaned_sheet1.to_excel(writer, sheet_name=sheet_names[0], index=False)
+        cleaned_sheet2.to_excel(writer, sheet_name=sheet_names[1], index=False)
 
 # Example usage
 if __name__ == "__main__":
