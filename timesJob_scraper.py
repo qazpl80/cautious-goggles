@@ -1,5 +1,3 @@
-#Main
-
 from bs4 import BeautifulSoup
 import requests
 import csv
@@ -69,16 +67,6 @@ def filterViaSkills(JobInfo, user_skills):
                 filteredJobs.append(job)  # if the user's skill is in the required skill list of the job, then add to the filteredJobs list
     return filteredJobs
 
-def save_to_csv(info):
-    if info == []:  # if there is no such job
-        print("No such job in TimesJobs listing with your skillsets or location")
-    else:
-        with open('jobs.csv', 'w', newline='') as jf:
-            writer = csv.writer(jf, delimiter=',')
-            writer.writerow(["Position/Title", "Company Name", "Required Skills", "Job Description", "Link to Job"])  # write the title of the columns (categories the data)
-            writer.writerows(info)  # write all the job that fits the user via their skillset into the csv
-        print("File saved")
-
 def main(position, location, user_skills, page_number):
     # check for at least 1 input in either position, location or skills
     if (position == '' and location == '' and user_skills == ['']):
@@ -89,8 +77,8 @@ def main(position, location, user_skills, page_number):
         if user_skills == ['']:  # if user decided not to put any skills
             return jobs, jobs_count, dups_count
         else:
-            print(user_skills)
             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
+            print(filteredJobs)
             return filteredJobs, jobs_count, dups_count
 
 if __name__ == "__main__":
