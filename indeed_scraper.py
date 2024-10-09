@@ -243,7 +243,7 @@ def scrapeJobs( # Function to scrape the jobs
 
 def main(positioninput, noOfjobsinput): # Main function to run the program
   if noOfjobsinput == '':
-    noOfjobsinput = 25
+    noOfjobsinput *= 25
   try: 
     noOfjobsinput = int(noOfjobsinput)
   except ValueError:

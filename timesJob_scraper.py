@@ -84,18 +84,12 @@ def main(position, location, user_skills, page_number):
     if (position == '' and location == '' and user_skills == ['']):
         print("Please enter at least 1 input")
     else:
-        if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
-            page_number = 1
-        else:
-            try:
-                page_number = int(page_number)  # input validation for page_number
-            except ValueError:
-                print("Enter a valid integer")
         jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, page_number)
         formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
         if user_skills == ['']:  # if user decided not to put any skills
             return jobs, jobs_count, dups_count
         else:
+            print(user_skills)
             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
             return filteredJobs, jobs_count, dups_count
 
