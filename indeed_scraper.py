@@ -243,23 +243,23 @@ def scrapeJobs( # Function to scrape the jobs
     
     return scrapedInfo(scrapeInput.scrapSites) # Returning the scraped info
 
-def main(positioninput, noOfjobsinput): # Main function to run the program
-  if noOfjobsinput == '':
-    noOfjobsinput *= 25
-  if noOfjobsinput > 100:
-    noOfjobsinput = 100
+def main(position, noOfjobs): # Main function to run the program
+  if noOfjobs == '':
+    noOfjobs = 25
+  if noOfjobs > 100:
+    noOfjobs= 100
     print("Indeed max job is 100")
   try: 
-    noOfjobsinput = int(noOfjobsinput)
+    noOfjobs = int(noOfjobs)
   except ValueError:
     print("Enter valid integer")
 
   jobs = scrapeJobs( # Scraping the jobs
       sitePlatform=["indeed"], # Site platform
-      position=positioninput, # Position
+      position=position, # Position
       location="singapore", # Location
       country="singapore", # Country
-      noOfjobs=noOfjobsinput # Number of jobs the user want to scrape
+      noOfjobs=noOfjobs # Number of jobs the user want to scrape
   )
   return jobs
 
