@@ -67,7 +67,7 @@ def extract_requirements(text):
     # Preprocess the text to remove unwanted symbols
     text = preprocess_text(text)
     
-    # Match structured sections like "Your background", "What you will do", etc.
+    # Use regex to extract sections with headings and content
     pattern = re.compile(r'(\b[A-Za-z\s&]+)\s*:\s*(.+?)(?=\b[A-Za-z\s&]+(?:\s*:\s*)|$)', re.DOTALL)
     matches = pattern.findall(text)
 
@@ -77,13 +77,6 @@ def extract_requirements(text):
         # Add logic to filter relevant sections based on the heading or content
         if any(keyword.lower() in heading.lower() for keyword in ["Qualifications", "Skills", "Responsibilities", "Network Design", "Troubleshooting", "Experience", "Education", "Requirements", "Job Description", "Installation and Configuration", "Security Implementation", "Upgrades", "Documentation", "Performance Optimization", "Vendor Management", "Compliance & Standards","Your background", "What you will do"]):
             extracted_requirements.append(f'{heading.strip()}: {content.strip()}')
-    
-    # Bullet point detection for non-labeled qualifications or skills
-    #bullet_point_pattern = re.compile(r'^\s*[\*\-]\s*(.+)', re.MULTILINE)
-    #bullet_points = bullet_point_pattern.findall(text)
-    
-    #if bullet_points:
-    #    extracted_requirements.append("Bullet Points: " + " | ".join(bullet_points))
 
     # If regex extraction fails or doesn't capture everything, fall back to keyword-based extraction
     if not extracted_requirements:
@@ -101,7 +94,7 @@ def extract_keywords(text):
     keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 3), stop_words='english', nr_candidates=50, top_n=5)
     return ', '.join([kw[0] for kw in keywords])
 
-# Perform NER using spaCy (MIGHT NEED TO REMOVE THIS)
+# Perform NER using spaCy
 def extract_ner(text):
     doc = nlp(text)
     skills = [ent.text for ent in doc.ents if ent.label_ in ['ORG', 'GPE', 'DATE', 'SKILL']]
@@ -127,7 +120,8 @@ def topic_modeling(texts):
 
 # Main function to clean and extract information from job descriptions
 def clean_job_descriptions(input_file, output_file):
-    df = pd.read_csv(input_file, encoding='latin1', index_col=False)
+    # Read Excel file
+    df = pd.read_excel(input_file, index_col=False)
     cleaned_data = []
     all_texts = []
     
@@ -158,8 +152,8 @@ def clean_job_descriptions(input_file, output_file):
             cleaned_data.append({'Cleaned Data': 'Non-English data', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
     
     # Perform LDA topic modeling after processing all job descriptions
-
     lda_topics = topic_modeling(all_texts)
+    
     # Add LDA topics to the cleaned data
     if len(cleaned_data) < 5:
         for i in range(len(cleaned_data)):
@@ -168,12 +162,12 @@ def clean_job_descriptions(input_file, output_file):
         for i, topic in enumerate(lda_topics):
             cleaned_data[i]['LDA Topics'] = topic
     
-    # Save the results to CSV
+    # Save the results to an Excel file
     cleaned_df = pd.DataFrame(cleaned_data)
-    cleaned_df.to_csv(output_file, index=False)
+    cleaned_df.to_excel(output_file, index=False)
 
 # Example usage
 if __name__ == "__main__":
-    input_file = 'jobs.csv'
-    output_file = 'cleaned_job_descriptions.csv'
+    input_file = 'jobs.xlsx'
+    output_file = 'cleaned_job_descriptions.xlsx'
     clean_job_descriptions(input_file, output_file)
