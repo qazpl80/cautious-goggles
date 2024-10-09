@@ -95,6 +95,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
             print(f'{response.status_code} STATUS CODE NOT RIGHT {response.reason}') # Printing the status code if not right
             return jobs # Returning the jobs if status code is not right
         data = response.json() # Getting the response in JSON format
+        print('bitch', data)
         if "data" in data and "jobSearch" in data["data"] and "results" in data["data"]["jobSearch"]: # Checking the data structure
             jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
         else: 
@@ -102,6 +103,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
         jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
         jobsList.append(jobs) # Adding the jobs to the list
         JobsDetailsList = [self.getJobsDetails(job["job"]) for job in jobs] # Getting the jobs details by calling the method for each job
+        print('fuck', JobsDetailsList)
         for i in JobsDetailsList: # Loop to check the None values
           for j in range(len(i)): 
             if i[j] is None:  # Checking if the value is None
@@ -143,7 +145,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
       jobData.append(jobPostDate) # Adding the job post date to the job data
       jobData.append(jobUrl) # Adding the job URL to the job data
       jobData.append('\n' * 8) # Adding 8 new lines to the job data to separate the jobs and make it more readable in the CSV file
-
+      
       return jobData # Returning the job data
     
     searchQuery = """ # Search query to search the jobs 
@@ -260,4 +262,4 @@ def main(positioninput, noOfjobsinput): # Main function to run the program
 
 
 if __name__ == '__main__':
-  main()
+  main('cyber security', 200)
