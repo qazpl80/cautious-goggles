@@ -246,6 +246,9 @@ def scrapeJobs( # Function to scrape the jobs
 def main(positioninput, noOfjobsinput): # Main function to run the program
   if noOfjobsinput == '':
     noOfjobsinput *= 25
+  if noOfjobsinput > 100:
+    noOfjobsinput = 100
+    print("Indeed max job is 100")
   try: 
     noOfjobsinput = int(noOfjobsinput)
   except ValueError:
