@@ -76,17 +76,13 @@ def on_submit():
             noOfjobs = 25 * page_number                             #following the same logic as timesjobs, we will get 25 jobs per page
             indeed_jobs = indeed_scraper.main(position, noOfjobs)   #get the job details from the indeed_scraper
             jobs_info = defaultdict(str)                            #create a dictionary to store the job details
-            while True:
-                if len(indeed_job_list) <= noOfjobs:
-                    for job in indeed_jobs[1][0]:                                                                                           #the job details are stored in the 2nd index of the list
-                        jobs_info['Company Name'] = job.get('job').get('employer').get('name') if job.get('job').get('employer') else 'NIL' #if the company name is not available, then it will be NIL
-                        jobs_info['Position'] = job.get('job').get('title')                                                                 #get the title of the job
-                        jobs_info['Location'] = job.get('job').get('location').get('countryName')                                           #get the location of the job
-                        jobs_info['Job Description'] = job.get('job').get('description').get('html')                                        #get the job description
-                        jobs_info['Job URL'] = f'https://sg.indeed.com/viewjob?jk={job.get('job').get('key')}'                              #get the url of the job
-                        indeed_job_list.append(jobs_info.copy())                                                                            #append the job details to the list
-                else:
-                    break
+            for job in indeed_jobs[1][0]:                                                                                           #the job details are stored in the 2nd index of the list
+                jobs_info['Company Name'] = job.get('job').get('employer').get('name') if job.get('job').get('employer') else 'NIL' #if the company name is not available, then it will be NIL
+                jobs_info['Position'] = job.get('job').get('title')                                                                 #get the title of the job
+                jobs_info['Location'] = job.get('job').get('location').get('countryName')                                           #get the location of the job
+                jobs_info['Job Description'] = job.get('job').get('description').get('html')                                        #get the job description
+                jobs_info['Job URL'] = f'https://sg.indeed.com/viewjob?jk={job.get('job').get('key')}'                              #get the url of the job
+                indeed_job_list.append(jobs_info.copy())                                                                            #append the job details to the list
             update_result_box(f"Found {len(indeed_job_list)} jobs on Indeed.")
             total_jobs_count += len(indeed_job_list) #counting the total number of jobs found
             
@@ -94,18 +90,16 @@ def on_submit():
         elif site == 'timesjobs':
             timesjobs_count = 0
             jobs_info = defaultdict(str)
-            while True:
-                timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number)
-                for job in timesjobs_jobs:
-                    jobs_info['Position'] = job[0]                              #get the title of the job
-                    jobs_info['Company Name'] = job[1]                          #get the company name
-                    jobs_info['Location'] = job[5]   #if the location is not available, then it will be NIL
-                    jobs_info['Skillset Required'] = job[2]                     #get the skillset required for the job
-                    jobs_info['Job Description'] = job[3]                       #get the job description
-                    jobs_info['Job URL'] = job[4]                               #get the url of the job
-                    timesjob_list.append(jobs_info.copy())                      #append the job details to the list
+            timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number)
+            for job in timesjobs_jobs:
+                jobs_info['Position'] = job[0]                              #get the title of the job
+                jobs_info['Company Name'] = job[1]                          #get the company name
+                jobs_info['Location'] = job[5]   #if the location is not available, then it will be NIL
+                jobs_info['Skillset Required'] = job[2]                     #get the skillset required for the job
+                jobs_info['Job Description'] = job[3]                       #get the job description
+                jobs_info['Job URL'] = job[4]                               #get the url of the job
+                timesjob_list.append(jobs_info.copy())                      #append the job details to the list
                 total_jobs_count += timesjobs_count                             #counting the total number of jobs found
-                break
             update_result_box(f"Found {timesjobs_count} jobs on TimesJobs.")
         else:
             messagebox.showerror("Input Error", "Invalid site selected.")
@@ -113,23 +107,27 @@ def on_submit():
             return
 
         
-
+    print('plsstop', {'Indeed': indeed_job_list, 'TimesJobs': timesjob_list}.items())
+    
     if indeed_job_list or timesjob_list:
         for site, jobs in {'Indeed': indeed_job_list, 'TimesJobs': timesjob_list}.items():
             # Define columns based on the site
-            if site == 'Indeed':
+            if site == 'Indeed' and indeed_job_list:
                 df_indeed = pd.DataFrame(indeed_job_list)                                                                       #create a dataframe of the job details for indeed
-                columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]                          #create a list of columns
-            elif site == 'TimesJobs':
+                #columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]                          #create a list of columns
+            elif site == 'TimesJobs' and timesjob_list:
                 df_timesjob = pd.DataFrame(timesjob_list)                                                                       #create a dataframe of the job details for timesjobs
-                columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job Description", "Job URL"]     #create a list of columns
+                #columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job Description", "Job URL"]     #create a list of columns
+                update_result_box(f"Total jobs found: {total_jobs_count}. Results saved to jobs.xlsx.") if not timesjob_dups else update_result_box(f"Total jobs found: {total_jobs_count}. {timesjob_dups} duplicates found. Results saved to jobs.xlsx.")
 
          # Write DataFrames to different sheets in the same Excel file
         with pd.ExcelWriter('jobs.xlsx') as writer:
-            df_indeed.to_excel(writer, sheet_name='Indeed', index=False)                #write the indeed job details to the excel file but different sheets
-            df_timesjob.to_excel(writer, sheet_name='TimesJob', index=False)            #write the timesjob job details to the excel file but different sheets
+            if indeed_job_list:
+                df_indeed.to_excel(writer, sheet_name='Indeed', index=False)                #write the indeed job details to the excel file but different sheets
+            if timesjob_list:
+                df_timesjob.to_excel(writer, sheet_name='TimesJob', index=False)            #write the timesjob job details to the excel file but different sheets
 
-        update_result_box(f"Total jobs found: {total_jobs_count}. Results saved to jobs.xlsx.") if not timesjob_dups else update_result_box(f"Total jobs found: {total_jobs_count}. {timesjob_dups} duplicates found. Results saved to jobs.xlsx.")
+        
         # messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. Results saved to jobs.xlsx.") if not timesjob_dups else messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. {timesjob_dups} duplicates found. Results saved to jobs.xlsx.")
 
         if cleandata_var.get():

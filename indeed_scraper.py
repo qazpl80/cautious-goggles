@@ -95,7 +95,6 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
             print(f'{response.status_code} STATUS CODE NOT RIGHT {response.reason}') # Printing the status code if not right
             return jobs # Returning the jobs if status code is not right
         data = response.json() # Getting the response in JSON format
-        print('bitch', data)
         if "data" in data and "jobSearch" in data["data"] and "results" in data["data"]["jobSearch"]: # Checking the data structure
             jobs = data["data"]["jobSearch"]["results"] # Getting the jobs
         else: 
@@ -108,7 +107,7 @@ class indeedScraper():  # Indeed scraper class to scrape the jobs from Indeed si
           for j in range(len(i)): 
             if i[j] is None:  # Checking if the value is None
               i[j] = 'NIL' # Setting the value to NIL if None
-        with open('jobs.csv', 'w', newline='', encoding='utf-8') as f: # Opening the file to write the jobs
+        with open('indeedjobs.csv', 'w', newline='', encoding='utf-8') as f: # Opening the file to write the jobs
           writer = csv.writer(f, delimiter=',') # Creating a CSV writer object to write the jobs with delimiter as comma
           writer.writerow(['ID', 'Title','Company name', 'City', 'Country Code', 'Country Name', 'Postal Code', 'Street Address', 'Job Description', 'Job post date', 'Job URL']) # Writing the header
           writer.writerows(JobsDetailsList) # Writing the jobs details
@@ -261,6 +260,8 @@ def main(position, noOfjobs): # Main function to run the program
       country="singapore", # Country
       noOfjobs=noOfjobs # Number of jobs the user want to scrape
   )
+  print('idiot',len(jobs[1][0]))
+  print('bitch',jobs)
   return jobs
 
 

@@ -13,10 +13,11 @@ def find_job(position, location, user_skills, page_number):
     page_count = 1
     info = []  # list containing all the search results (position, company name, and skillset required)
     seen_jobs = set()  # set to track unique job postings
+    job_count = 0
+    dup_count = 0
     while page_count <= page_number:
-        job_count = 0
-        dup_count = 0
         url = f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1'
+        print(f'TimesJobs scraper scraping page {page_count}')
         response = requests.get(url, headers=header)
         if response.status_code != 200:
             print("Response error", response.status_code, response.reason)
@@ -56,7 +57,9 @@ def find_job(position, location, user_skills, page_number):
             eachJob.append(location)
             info.append(eachJob)  # finally append that one job posting to the list of job postings
             job_count += 1
+        print('dog', job_count, dup_count)
         page_count += 1
+    print('motherless', job_count, dup_count)
     return info, job_count, dup_count
 
 def formatData(info):  # this is to format data of the required skillset so we can match and filter the skills
@@ -66,8 +69,17 @@ def formatData(info):  # this is to format data of the required skillset so we c
                 jobs[2].remove('')
                 skill.replace('.', '')  # removing the full stops
         jobs[2] = [skill.lower() for skill in jobs[2]]  # to make all the words lowercase so we can match the skills of the user input
-
     return info
+
+def save_to_csv(info):
+    if info == []:  # if there is no such job
+        print("No such job in TimesJobs listing with your skillsets or location")
+    else:
+        with open('timesjobs.csv', 'w', newline='') as jf:
+            writer = csv.writer(jf, delimiter=',')
+            writer.writerow(["Position/Title", "Company Name", "Required Skills", "Job Description", "Link to Job"])  # write the title of the columns (categories the data)
+            writer.writerows(info)  # write all the job that fits the user via their skillset into the csv
+        print("File saved")
 
 def filterViaSkills(JobInfo, user_skills):
     filteredJobs = []  # this is a list containing the list of jobs that match the skillset of the user input
@@ -85,15 +97,17 @@ def main(position, location, user_skills, page_number):
     if (position == '' and location == '' and user_skills == ['']):
         print("Please enter at least 1 input")
     else:
-        jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, page_number)
+        jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, int(page_number))
         formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
         if user_skills == [''] or user_skills == '':  # if user decided not to put any skills
             print('TimesJobs: ',jobs)
+            save_to_csv(formattedData)
             return jobs, jobs_count, dups_count
         else:
             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
             print('TimesJobs: ',filteredJobs)
+            save_to_csv(filteredJobs)
             return filteredJobs, jobs_count, dups_count
 
 if __name__ == "__main__":
-    main('engineer', 'singapore',['it engineer'], '')
+    main('engineer', 'singapore','', 3)
