@@ -244,6 +244,9 @@ def main(position, noOfjobs): # Main function to run the program
   while True:
     if noOfjobs == '':
       noOfjobs = 25
+    if noOfjobs > 100:
+      noOfjobs = 100
+      print("Max job indeed is 100")
     try: 
       noOfjobs = int(noOfjobs)
     except ValueError:
