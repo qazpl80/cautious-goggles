@@ -32,6 +32,8 @@ def get_selected_sites():
     return selected_sites                                                           #return the list of selected sites
 
 def on_Clean_Data():
+    update_result_box("Cleaning job descriptions...")
+    guiwindow.update_idletasks()
     cleaned_outputfile, success = Cleandata.clean_job_descriptions()
     if success:
         update_result_box(f"Cleaned job descriptions saved to {cleaned_outputfile}.")
@@ -62,6 +64,7 @@ def on_submit():
             update_result_box("Please enter a valid number for the page number.") #update the result box with the message
 
     progress.set(0)                 # Reset progress bar
+    update_result_box("Program started. Please wait...")
     guiwindow.update_idletasks()    # Force GUI update
 
     selected_sites = get_selected_sites() #get the selected sites
@@ -74,12 +77,16 @@ def on_submit():
     timesjob_list = []   #create an empty list to store the timesjobs jobs
 
    
-    progress.set(0.15)              # increase progressbar to 15%
+    progress.set(0.15)  # increase progressbar to 15%
+    update_result_box("Searching for jobs...")
     guiwindow.update_idletasks()    # Force GUI update
 
     for site in selected_sites:
         #IF THE SITE IS INDEED
         if site == 'indeed':
+            update_result_box("Scraping Indeed...") 
+            guiwindow.update_idletasks()
+
             noOfjobs = 25 * page_number                             #following the same logic as timesjobs, we will get 25 jobs per page
             indeed_jobs = indeed_scraper.main(position, noOfjobs)   #get the job details from the indeed_scraper
             jobs_info = defaultdict(str)                            #create a dictionary to store the job details
@@ -92,12 +99,15 @@ def on_submit():
                 indeed_job_list.append(jobs_info.copy())                                                                            #append the job details to the list
             update_result_box(f"Found {len(indeed_job_list)} jobs on Indeed.") #update the result box with the message
             total_jobs_count += len(indeed_job_list) #counting the total number of jobs found
-
+            
             progress.set(0.35)              # Increase progress bar to 35%
             guiwindow.update_idletasks()    # Force GUI update
             
         #IF THE SITE IS TIMESJOBS
         elif site == 'timesjobs':
+            update_result_box("Scraping TimesJobs...")
+            guiwindow.update_idletasks()
+
             jobs_info = defaultdict(str) #create a dictionary to store the job details
             timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number) #get the job details from the timesJob_scraper
             for job in timesjobs_jobs:                                      #the job details are stored in the 1st index of the list
@@ -119,6 +129,7 @@ def on_submit():
             return
 
     progress.set(0.65) # Increase progress bar to 65%
+    update_result_box("Scraping completed. Saving results to Excel file...")
     guiwindow.update_idletasks()  # Force GUI update
     
     if indeed_job_list or timesjob_list:
@@ -144,8 +155,10 @@ def on_submit():
 
         on_Clean_Data()
 
-        TopSkills.run_extraction('cleaned_job_descriptions.csv', 'skills.json', 20)
         update_result_box("Top skills extracted and saved to skills.json.")
+        guiwindow.update_idletasks()    # Force GUI update
+        TopSkills.run_extraction('cleaned_job_descriptions.csv', 'skills.json', 20)
+        
 
         progress.set(1)               # Increase progress bar to 80%
         guiwindow.update_idletasks()    # Force GUI update
