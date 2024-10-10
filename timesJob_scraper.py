@@ -17,14 +17,23 @@ def find_job(position, location, user_skills, page_number):
     dup_count = 0
     while page_count <= page_number:
         url = f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence={page_count}&startPage=1'
+        # url2 = f'https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&searchTextSrc=&searchTextText=&txtKeywords={position}&txtLocation={location}&pDate=I&sequence=100&startPage=1'
         print(f'TimesJobs scraper scraping page {page_count}')
         response = requests.get(url, headers=header)
+        # response2 = requests.get(url2, headers=header)
+        # text = response2.text
+        # soup2 = BeautifulSoup(text, 'html.parser')
+        # jobs2 = soup2.find_all('li', class_='clearfix job-bx wht-shd-bx')
+        # print('fishingforleaf', jobs2)
         if response.status_code != 200:
             print("Response error", response.status_code, response.reason)
             return
         html_text = response.text
         soup = BeautifulSoup(html_text, 'html.parser')
         jobs = soup.find_all('li', class_='clearfix job-bx wht-shd-bx')  # finds all the jobs
+        if not jobs:
+            print(f'no more jobs from page {page_count} onwards')
+            break
         for index, job in enumerate(jobs):
             eachJob = []  # to isolate each job and add into info list as a list of its own
             title = ''  # title/position offered
@@ -121,4 +130,4 @@ def main2(position, location, user_skills, page_number):
         
 
 if __name__ == "__main__":
-    main('engineer', 'singapore','', 3)
+    main('engineer', 'singapore','', 1)
