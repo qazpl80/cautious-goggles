@@ -1,6 +1,7 @@
 import pandas as pd 
 import json
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def load_skills(filepath):
@@ -36,14 +37,16 @@ def extract_top_skills(cleaned_descriptions, all_skills, top_n):
     return top_skills 
 
 def plot_top_skills(top_skills):
-    """Generate a bar graph for the top skills."""
+    """Generate a bar graph for the top skills using Seaborn."""
     plt.figure(figsize=(10, 6))
-    plt.barh(top_skills['Skill'], top_skills['Score'], color='skyblue')
+    sns.barplot(data=top_skills, x='Score', y='Skill', palette='viridis')
+    
     plt.xlabel('TF-IDF Score')
     plt.ylabel('Skills')
     plt.title('Top Skills Employers are Looking For')
-    plt.gca().invert_yaxis()  # Invert y-axis to show highest scores at the top
-    plt.show()
+    plt.xticks(rotation=45)
+    plt.tight_layout()  # Adjust layout to make room for labels
+    plt.show()  # Show the plot
 
 def run_extraction(input_file, skills_file, top_n):
     """Runs extraction process"""
