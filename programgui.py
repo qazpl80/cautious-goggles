@@ -89,7 +89,7 @@ def on_submit():
         #IF THE SITE IS TIMESJOBS
         elif site == 'timesjobs':
             jobs_info = defaultdict(str)
-            timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main2(position, location, user_skills, page_number)
+            timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number)
             for job in timesjobs_jobs:
                 jobs_info['Position'] = job[0]                              #get the title of the job
                 jobs_info['Company Name'] = job[1]                          #get the company name

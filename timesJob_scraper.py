@@ -113,20 +113,20 @@ def main(position, location, user_skills, page_number):
             save_to_csv(filteredJobs)
             return filteredJobs, jobs_count, dups_count
         
-def main2(position, location, user_skills, page_number): 
-    if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
-        page_number = 1
-    # check for at least 1 input in either position, location or skills
-    if (position == '' and location == '' and user_skills == ['']):
-        print("Please enter at least 1 input")
-    else:
-        jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, int(page_number))
-        formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
-        if user_skills == [''] or user_skills == '':  # if user decided not to put any skills
-            return jobs, jobs_count, dups_count
-        else:
-            filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
-            return filteredJobs, jobs_count, dups_count
+# def main2(position, location, user_skills, page_number): 
+#     if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
+#         page_number = 1
+#     # check for at least 1 input in either position, location or skills
+#     if (position == '' and location == '' and user_skills == ['']):
+#         print("Please enter at least 1 input")
+#     else:
+#         jobs, jobs_count, dups_count = find_job(position.lower(), location.lower(), user_skills, int(page_number))
+#         formattedData = formatData(jobs)  # to format the data so we can use it to filter jobs in the next function
+#         if user_skills == [''] or user_skills == '':  # if user decided not to put any skills
+#             return jobs, jobs_count, dups_count
+#         else:
+#             filteredJobs = filterViaSkills(formattedData, user_skills)  # to get all the jobs matching the user input of their skills
+#             return filteredJobs, jobs_count, dups_count
         
 
 if __name__ == "__main__":
