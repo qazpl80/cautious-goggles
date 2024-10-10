@@ -94,6 +94,7 @@ def filterViaSkills(JobInfo, user_skills):
             for skill in job[2]:
                 if skill.lower() in job[2]:  # lowercase all the words so to match the words
                     filteredJobs.append(job)  # if the user's skill is in the required skill list of the job, then add to the filteredJobs list
+                    break
     return filteredJobs
 
 def main(position, location, user_skills, page_number): 
