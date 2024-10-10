@@ -21,7 +21,8 @@ requirement_keywords = [
     "responsible for", "experience in", "competency", "skills", "ability to", 
     "required", "must have", "proficiency", "knowledge of", "familiarity with",
     "oversee", "manage", "supervise", "source", "identify", "mentor", "agile", "description",
-    "expertise in", "develop", "implement", "coordinate", "collaborate", "qualifications"
+    "expertise in", "develop", "implement", "coordinate", "collaborate", "qualifications",
+    "requirements", "job description", "schedule"
 ]
 
 # Clean text for further processing
@@ -118,40 +119,47 @@ def topic_modeling(texts):
         topics.append(', '.join(top_words))
     return topics
 
-# Process and clean job descriptions for one sheet
-def process_sheet(sheet_df):
+# Main function to clean and extract information from job descriptions
+def clean_job_descriptions():
+    input_file1 = 'timesjobs.csv'
+    input_file2 = 'indeedjobs.csv'
+    output_file = 'cleaned_job_descriptions.csv'
+    df = pd.read_csv(input_file1, encoding='latin1', index_col=False)
+    df2 = pd.read_csv(input_file2, encoding='latin1', index_col=False)
+    list_df = [df, df2]
     cleaned_data = []
     all_texts = []
     
-    for index, row in sheet_df.iterrows():
-        jd = row['Job Description']
-        
-        if is_english(jd):
-            # Extract the requirements section
-            requirements = extract_requirements(jd)
-            if requirements:
-                cleaned_requirements = clean_text(requirements)
-                
-                # Store cleaned text for LDA analysis later
-                all_texts.append(cleaned_requirements)
-                
-                # Extract skills using KeyBERT, NER, and LDA
-                keywords = extract_keywords(cleaned_requirements)
-                ner_skills = extract_ner(cleaned_requirements)
-                
-                cleaned_data.append({
-                    'Cleaned Data': cleaned_requirements,
-                    'Keywords (KeyBERT)': keywords,
-                    'NER Skills (spaCy)': ner_skills
-                })
+    for i in range (len(list_df)):
+        for index, row in list_df[i].iterrows():
+            jd = row['Job Description']
+            
+            if is_english(jd):
+                # Extract the requirements section
+                requirements = extract_requirements(jd)
+                if requirements:
+                    cleaned_requirements = clean_text(requirements)
+                    
+                    # Store cleaned text for LDA analysis later
+                    all_texts.append(cleaned_requirements)
+                    
+                    # Extract skills using KeyBERT, NER, and LDA
+                    keywords = extract_keywords(cleaned_requirements)
+                    ner_skills = extract_ner(cleaned_requirements)
+                    
+                    cleaned_data.append({
+                        'Cleaned Data': cleaned_requirements,
+                        'Keywords (KeyBERT)': keywords,
+                        'NER Skills (spaCy)': ner_skills
+                    })
+                else:
+                    cleaned_data.append({'Cleaned Data': 'No extracted requirements', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
             else:
-                cleaned_data.append({'Cleaned Data': 'No extracted requirements', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
-        else:
-            cleaned_data.append({'Cleaned Data': 'Non-English data', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
-    
+                cleaned_data.append({'Cleaned Data': 'Non-English data', 'Keywords (KeyBERT)': '', 'NER Skills (spaCy)': ''})
+        
     # Perform LDA topic modeling after processing all job descriptions
+
     lda_topics = topic_modeling(all_texts)
-    
     # Add LDA topics to the cleaned data
     if len(cleaned_data) < 5:
         for i in range(len(cleaned_data)):
@@ -159,27 +167,11 @@ def process_sheet(sheet_df):
     else:
         for i, topic in enumerate(lda_topics):
             cleaned_data[i]['LDA Topics'] = topic
-    
-    return pd.DataFrame(cleaned_data)
+        
+    # Save the results to CSV
+    cleaned_df = pd.DataFrame(cleaned_data)
+    cleaned_df.to_csv(output_file, index=False)
+    return output_file, True
 
-# Main function to clean and extract information from multiple sheets in the Excel file
-def clean_job_descriptions(input_file, output_file):
-    # Read both sheets into separate DataFrames
-    sheet_names = pd.ExcelFile(input_file).sheet_names
-    df_sheet1 = pd.read_excel(input_file, sheet_name=sheet_names[0], index_col=False)
-    df_sheet2 = pd.read_excel(input_file, sheet_name=sheet_names[1], index_col=False)
-    
-    # Process both sheets
-    cleaned_sheet1 = process_sheet(df_sheet1)
-    cleaned_sheet2 = process_sheet(df_sheet2)
-    
-    # Save the cleaned data to the output Excel file
-    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
-        cleaned_sheet1.to_excel(writer, sheet_name=sheet_names[0], index=False)
-        cleaned_sheet2.to_excel(writer, sheet_name=sheet_names[1], index=False)
-
-# Example usage
 if __name__ == "__main__":
-    input_file = 'jobs.xlsx'
-    output_file = 'cleaned_job_descriptions.xlsx'
-    clean_job_descriptions(input_file, output_file)
+    clean_job_descriptions()
