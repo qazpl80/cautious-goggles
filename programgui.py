@@ -128,28 +128,33 @@ def on_submit():
                 df_timesjob = pd.DataFrame(timesjob_list)                                                                       #create a dataframe of the job details for timesjobs
                 #columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job Description", "Job URL"]     #create a list of columns
                 update_result_box(f"Total jobs found: {total_jobs_count}. Results saved to jobs.xlsx.") if not timesjob_dups else update_result_box(f"Total jobs found: {total_jobs_count}. {timesjob_dups} duplicates removed. Results saved to jobs.xlsx.")
+        
+        progress.set(1)                 # Increase progress bar to 80%
+        guiwindow.update_idletasks()    # Force GUI update
 
-         # Write DataFrames to different sheets in the same Excel file
+        # Write DataFrames to different sheets in the same Excel file
         with pd.ExcelWriter('jobs.xlsx') as writer:
             if indeed_job_list:
                 df_indeed.to_excel(writer, sheet_name='Indeed', index=False)                #write the indeed job details to the excel file but different sheets
             if timesjob_list:
                 df_timesjob.to_excel(writer, sheet_name='TimesJob', index=False)            #write the timesjob job details to the excel file but different sheets
 
-        progress.set(0.8)               # Increase progress bar to 80%
-        guiwindow.update_idletasks()    # Force GUI update
+
         
         # messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. Results saved to jobs.xlsx.") if not timesjob_dups else messagebox.showinfo("Results", f"Found {total_jobs_count} jobs. {timesjob_dups} duplicates found. Results saved to jobs.xlsx.")
 
-        # Cleandata.clean_job_descriptions('jobs.xlsx', 'cleaned_job_descriptions.xlsx')                      # Run cleandata.py
-        # update_result_box("Data cleaned and saved to cleaned_job_descriptions.csv.")
+        # Cleandata.clean_job_descriptions()                      # Run cleandata.py
+        # update_result_box()
 
         # TopSkills.run_extraction('cleaned_job_descriptions.xlsx', 'skills.json', 20)                        # Run topskills.py
         # update_result_box("Top skills extracted and saved to skills.json.")
-        progress.set(1)
+
+        progress.set(1)               # Increase progress bar to 80%
+        guiwindow.update_idletasks()    # Force GUI update
     else:
         update_result_box("No jobs found or matched the criteria.")
         progress.set(1)
+        guiwindow.update_idletasks()  # Force GUI update
 
 def initialize_gui():
     global JobPositionEntry, JobLocationEntry, JobSkillsEntry, PageNumberEntry, progress, guiwindow, indeed_var, timesjobs_var, cleandata_var, topskills_var, result_box
@@ -187,8 +192,8 @@ def initialize_gui():
     SubmitButton = ctk.CTkButton(guiwindow, text="Submit", command=on_submit, fg_color="dark green")
 
     # Buttons for running Cleandata.py and TopSkills.py
-    CleanDataButton = ctk.CTkButton(guiwindow, text="Clean Data", command=lambda: Cleandata.clean_job_descriptions('jobs.xlsx', 'cleaned_job_descriptions.xlsx'))
-    TopSkillsButton = ctk.CTkButton(guiwindow, text="Show Graph (Top Skills)", command=lambda: TopSkills.run_extraction('cleaned_job_descriptions.xlsx', 'skills.json', 20))
+    CleanDataButton = ctk.CTkButton(guiwindow, text="Clean Data", command=lambda: Cleandata.clean_job_descriptions())
+    TopSkillsButton = ctk.CTkButton(guiwindow, text="Show Graph (Top Skills)", command=lambda: TopSkills.run_extraction('cleaned_job_descriptions.csv', 'skills.json', 20))
 
     progress = ctk.CTkProgressBar(guiwindow, orientation="horizontal", mode='determinate')
     progress.set(0)
