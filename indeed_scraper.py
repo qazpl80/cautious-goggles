@@ -232,7 +232,7 @@ def scrapeJobs( # Function to scrape the jobs
         siteToScrape = SCRAPEPLATFORM[site[0]] # Site to scrape
         scraper = siteToScrape() # Scraper object
         data = scraper.scrape(scrapeInput) # Scraping the data
-        print("Scrape done") # Printing the message to show that the scraping is done
+        print(f"Scrape done with {len(data[0])} jobs found") # Printing the message to show that the scraping is done
         return site, data # Returning the site and data
     
     def scrapedInfo(site): # Function to get the scraped info
