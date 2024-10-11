@@ -155,7 +155,7 @@ def on_submit():
 
         on_Clean_Data()
 
-        update_result_box("Top skills extracted and saved to skills.json.")
+        update_result_box("Top skills extracted.")
         guiwindow.update_idletasks()    # Force GUI update
         TopSkills.run_extraction('cleaned_job_descriptions.csv', 'skills.json', 20)
         
