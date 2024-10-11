@@ -263,4 +263,4 @@ def main(position, noOfjobs): # Main function to run the program
 
 
 if __name__ == '__main__':
-  main('cyber security', 200)
+  main('cyber security', 25)
