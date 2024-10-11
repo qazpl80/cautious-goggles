@@ -85,7 +85,7 @@ def scrapeLinkedin(search_term, search_location, noOfjobswanted):
             print('No jobs found with the given parameters')
             break
         if len(job_list) < noOfjobswanted-1:
-            time.sleep(random.uniform(3, 7))
+            time.sleep(random.uniform(4, 10))
             start += len(job_list)
     return job_list[:noOfjobswanted]
     
