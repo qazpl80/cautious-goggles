@@ -90,7 +90,7 @@ def scrapeLinkedin(search_term, search_location, noOfjobswanted):
     return job_list[:noOfjobswanted]
     
 def save_to_csv(jobList):
-    with open('linkedinjobs.csv', 'w', newline='', encoding='utf-8') as f:
+    with open('linkedinjobs.csv', 'w', newline='', encoding='utf-8', errors='replace') as f:
         writer = csv.writer(f, delimiter=',')
         writer.writerow(['ID', 'Title','Company name', 'Location', 'Job Description', 'Job post date', 'Job URL', 'Company URL'])
         writer.writerows(jobList)

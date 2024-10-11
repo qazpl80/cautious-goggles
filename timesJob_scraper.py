@@ -81,7 +81,7 @@ def save_to_csv(info):
     if info == []:  # if there is no such job
         print("No such job in TimesJobs listing with your skillsets or location")
     else:
-        with open('timesjobs.csv', 'w', newline='', encoding='utf-8') as jf:
+        with open('timesjobs.csv', 'w', newline='', encoding='utf-8', errors='replace') as jf:
             writer = csv.writer(jf, delimiter=',')
             writer.writerow(["Position/Title", "Company Name", "Required Skills", "Job Description", "Link to Job"])  # write the title of the columns (categories the data)
             writer.writerows(info)  # write all the job that fits the user via their skillset into the csv
