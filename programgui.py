@@ -6,8 +6,6 @@ import timesJob_scraper
 import indeed_scraper
 import Cleandata
 import TopSkills
-import threading
-import queue
 
 #update the result box with the message
 def update_result_box(message):
@@ -34,130 +32,140 @@ def get_selected_sites():
     return selected_sites                                                           #return the list of selected sites
 
 def on_Clean_Data():
-    # Function to run data cleaning in a separate thread
-    def clean_data_thread():
-        update_result_box("Cleaning job descriptions...")
-        guiwindow.update_idletasks()
-        cleaned_outputfile, success = Cleandata.clean_job_descriptions()
-        if success:
-            guiwindow.after(0, update_result_box, f"Cleaned job descriptions saved to {cleaned_outputfile}.")  
-        else:
-            guiwindow.after(0, update_result_box, "Failed to clean job descriptions.")  
-            
-    threading.Thread(target=clean_data_thread, daemon=True).start()  # Start the cleaning thread
+    update_result_box("Cleaning job descriptions...")
+    guiwindow.update_idletasks()
+    cleaned_outputfile, success = Cleandata.clean_job_descriptions()
+    if success:
+        update_result_box(f"Cleaned job descriptions saved to {cleaned_outputfile}.")
+    else:
+        update_result_box("Failed to clean job descriptions.")
 
-def scrape_indeed_jobs(position, noOfjobs, result_queue):
-    indeed_job_list = []
-    try:
-        update_result_box("Scraping Indeed...")
-        indeed_jobs = indeed_scraper.main(position, noOfjobs)  # Get job details from Indeed scraper
-        for job in indeed_jobs[1][0]:  # Job details are stored in the 2nd index of the list
-            jobs_info = {
-                'Company Name': job.get('job').get('employer').get('name') if job.get('job').get('employer') else 'NIL',
-                'Position': job.get('job').get('title'),
-                'Location': job.get('job').get('location').get('countryName'),
-                'Job Description': job.get('job').get('description').get('html'),
-                'Job URL': f'https://sg.indeed.com/viewjob?jk={job.get("job").get("key")}'
-            }
-            indeed_job_list.append(jobs_info)
-        result_queue.put((len(indeed_job_list), "Found {} jobs on Indeed.".format(len(indeed_job_list))))  # Queue results
-    except Exception as e:
-        result_queue.put((0, f"Error scraping Indeed: {str(e)}"))
-
-def scrape_timesjobs_jobs(position, location, user_skills, page_number, result_queue):
-    timesjob_list = []
-    try:
-        update_result_box("Scraping TimesJobs...")
-        timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number)
-        for job in timesjobs_jobs:  # The job details are stored in the 1st index of the list
-            jobs_info = {
-                'Position': job[0],
-                'Company Name': job[1],
-                'Location': job[5],
-                'Skillset Required': job[2],
-                'Job Description': job[3],
-                'Job URL': job[4]
-            }
-            timesjob_list.append(jobs_info)
-        result_queue.put((len(timesjob_list), "Found {} jobs on TimesJobs.".format(timesjobs_count)))  # Queue results
-    except Exception as e:
-        result_queue.put((0, f"Error scraping TimesJobs: {str(e)}"))
-
-def scrape_jobs(selected_sites, position, location, user_skills, page_number):
-    total_jobs_count = 0  # Initialize total jobs count
-    indeed_job_list = []  # Create an empty list to store the Indeed job details
-    timesjob_list = []    # Create an empty list to store the TimesJobs job details
-    result_queue = queue.Queue()  # Create a queue to get results from threads
-
-    def worker():
-        if 'indeed' in selected_sites:
-            noOfjobs = 25 * page_number  # Following the same logic as TimesJobs
-            scrape_indeed_jobs(position, noOfjobs, result_queue)
-        if 'timesjobs' in selected_sites:
-            scrape_timesjobs_jobs(position, location, user_skills, page_number, result_queue)
-
-    threading.Thread(target=worker, daemon=True).start()  # Start the scraping worker thread
-
-    # Update the result box in the main thread
-    guiwindow.after(100, check_queue, result_queue)
-
-def check_queue(result_queue):
-    try:
-        while True:
-            count, message = result_queue.get_nowait()  # Get results from the queue
-            update_result_box(message)  # Update the result box
-            if count > 0:
-                # Logic to handle job lists if needed
-                pass
-    except queue.Empty:
-        guiwindow.after(100, check_queue, result_queue)  # Check the queue again later
-
-def save_results_to_excel(indeed_job_list, timesjob_list):
-    if indeed_job_list:
-        df_indeed = pd.DataFrame(indeed_job_list)  # Create a DataFrame for Indeed job details
-    if timesjob_list:
-        df_timesjob = pd.DataFrame(timesjob_list)  # Create a DataFrame for TimesJobs job details
-
-    with pd.ExcelWriter('jobs.xlsx') as writer:
-        if indeed_job_list:
-            df_indeed.to_excel(writer, sheet_name='Indeed', index=False)  # Write the Indeed job details to the Excel file
-        if timesjob_list:
-            df_timesjob.to_excel(writer, sheet_name='TimesJob', index=False)  # Write the TimesJobs job details to the Excel file
-
-    on_Clean_Data()  # Call function to clean data
-    update_result_box("Job results saved to jobs.xlsx.")
-
+#function to run when the submit button is clicked
 def on_submit():
     clear_result_box()  # Clear the result box
-    position = JobPositionEntry.get().strip()  # Get the position entered by the user
-    location = JobLocationEntry.get().strip()  # Get the location entered by the user
-    user_skills = JobSkillsEntry.get().split(',')  # Get the skills entered by the user
+    position = JobPositionEntry.get().strip()                                       #get the position entered by the user
+    location = JobLocationEntry.get().strip()                                       #get the location entered by the user
+    user_skills = JobSkillsEntry.get().split(',')                                   #get the skills entered by the user
 
     # Ensure at least one of the fields is filled
     if not position and not location and not any(user_skills):
-        messagebox.showerror("Input Error", "Please enter at least one value in position, location, or skills.")
-        update_result_box("Please enter at least one value in position, location, or skills.")
+        messagebox.showerror("Input Error", "Please enter at least one value in position, location, or skills.") #show an error message if the user does not enter any value in position, location, or skills
+        update_result_box("Please enter at least one value in position, location, or skills.")                   #update the result box with the message
         return
 
-    page_number = str(PageNumberEntry.get())  # Get the page number entered by the user
-    if page_number == '':  # If user decided not to input any page number, search for 1 page of results
-        page_number = 1
+    page_number = str(PageNumberEntry.get()) #get the page number entered by the user
+    if page_number == '':  # if user decided not to input any page number, then it will only search for 1 page of the results
+            page_number = 1
     else:
         try:
-            page_number = int(page_number)  # Input validation for page_number
+            page_number = int(page_number)  # input validation for page_number
         except ValueError:
-            messagebox.showerror("Input Error", "Please enter a valid number for the page number.")
-            update_result_box("Please enter a valid number for the page number.")
-            return
+            messagebox.showerror("Input Error", "Please enter a valid number for the page number.") #show an error message if the user does not enter a valid number for the page number
+            update_result_box("Please enter a valid number for the page number.") #update the result box with the message
 
+    progress.set(0)                 # Reset progress bar
     update_result_box("Program started. Please wait...")
-    guiwindow.update_idletasks()  # Force GUI update
+    guiwindow.update_idletasks()    # Force GUI update
 
-    selected_sites = get_selected_sites()  # Get the selected sites
+    selected_sites = get_selected_sites() #get the selected sites
     if not selected_sites:
         return
 
-    scrape_jobs(selected_sites, position, location, user_skills, page_number)
+    total_jobs_count = 0 #initialize the total number of jobs found to 0
+    indeed_job_list = [] #create an empty list to store the indeed job details
+    timesjobs_jobs = []  #create an empty list to store the timesjobs job details
+    timesjob_list = []   #create an empty list to store the timesjobs jobs
+
+   
+    progress.set(0.15)  # increase progressbar to 15%
+    update_result_box("Searching for jobs...")
+    guiwindow.update_idletasks()    # Force GUI update
+
+    for site in selected_sites:
+        #IF THE SITE IS INDEED
+        if site == 'indeed':
+            update_result_box("Scraping Indeed...") 
+            guiwindow.update_idletasks()
+
+            noOfjobs = 25 * page_number                             #following the same logic as timesjobs, we will get 25 jobs per page
+            indeed_jobs = indeed_scraper.main(position, noOfjobs)   #get the job details from the indeed_scraper
+            jobs_info = defaultdict(str)                            #create a dictionary to store the job details
+            for job in indeed_jobs[1][0]:                           #the job details are stored in the 2nd index of the list
+                jobs_info['Company Name'] = job.get('job').get('employer').get('name') if job.get('job').get('employer') else 'NIL' #if the company name is not available, then it will be NIL
+                jobs_info['Position'] = job.get('job').get('title')                                                                 #get the title of the job
+                jobs_info['Location'] = job.get('job').get('location').get('countryName')                                           #get the location of the job
+                jobs_info['Job Description'] = job.get('job').get('description').get('html')                                        #get the job description
+                jobs_info['Job URL'] = f'https://sg.indeed.com/viewjob?jk={job.get('job').get('key')}'                              #get the url of the job
+                indeed_job_list.append(jobs_info.copy())                                                                            #append the job details to the list
+            update_result_box(f"Found {len(indeed_job_list)} jobs on Indeed.") #update the result box with the message
+            total_jobs_count += len(indeed_job_list) #counting the total number of jobs found
+            
+            progress.set(0.35)              # Increase progress bar to 35%
+            guiwindow.update_idletasks()    # Force GUI update
+            
+        #IF THE SITE IS TIMESJOBS
+        elif site == 'timesjobs':
+            update_result_box("Scraping TimesJobs...")
+            guiwindow.update_idletasks()
+
+            jobs_info = defaultdict(str) #create a dictionary to store the job details
+            timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number) #get the job details from the timesJob_scraper
+            for job in timesjobs_jobs:                                      #the job details are stored in the 1st index of the list
+                jobs_info['Position'] = job[0]                              #get the title of the job
+                jobs_info['Company Name'] = job[1]                          #get the company name
+                jobs_info['Location'] = job[5]                              #get the location of the job
+                jobs_info['Skillset Required'] = job[2]                     #get the skillset required for the job
+                jobs_info['Job Description'] = job[3]                       #get the job description
+                jobs_info['Job URL'] = job[4]                               #get the url of the job
+                timesjob_list.append(jobs_info.copy())                      #append the job details to the list
+            update_result_box(f"Found {timesjobs_count} jobs on TimesJobs.")#update the result box with the message
+            total_jobs_count += len(timesjob_list) + timesjob_dups          #counting the total number of jobs found
+
+            progress.set(0.50)              # Increase progress bar to 50%
+            guiwindow.update_idletasks()    # Force GUI update
+        else:
+            messagebox.showerror("Input Error", "Invalid site selected.") #show an error message if the user selects an invalid site
+            update_result_box("Invalid site selected.") #update the result box with the message
+            return
+
+    progress.set(0.65) # Increase progress bar to 65%
+    update_result_box("Scraping completed. Saving results to Excel file...")
+    guiwindow.update_idletasks()  # Force GUI update
+    
+    if indeed_job_list or timesjob_list:
+        for site, jobs in {'Indeed': indeed_job_list, 'TimesJobs': timesjob_list}.items():
+            # Define columns based on the site
+            if site == 'Indeed' and indeed_job_list:
+                df_indeed = pd.DataFrame(indeed_job_list)                                                                       #create a dataframe of the job details for indeed
+                #columns = ["Title/Position", "Company Name", "Location", "Job Description", "Job URL"]                          #create a list of columns
+            elif site == 'TimesJobs' and timesjob_list:
+                df_timesjob = pd.DataFrame(timesjob_list)                                                                       #create a dataframe of the job details for timesjobs
+                #columns = ["Title/Position", "Company Name", "Location", "Skillset Required", "Job Description", "Job URL"]     #create a list of columns
+                update_result_box(f"Total jobs found: {total_jobs_count}. Results saved to jobs.xlsx.") if not timesjob_dups else update_result_box(f"Total jobs found: {total_jobs_count}. {timesjob_dups} duplicates removed. Results saved to jobs.xlsx.")
+        
+        progress.set(0.8)               # Increase progress bar to 80%
+        guiwindow.update_idletasks()    # Force GUI update
+
+        # Write DataFrames to different sheets in the same Excel file
+        with pd.ExcelWriter('jobs.xlsx') as writer:
+            if indeed_job_list:
+                df_indeed.to_excel(writer, sheet_name='Indeed', index=False)                #write the indeed job details to the excel file but different sheets
+            if timesjob_list:
+                df_timesjob.to_excel(writer, sheet_name='TimesJob', index=False)            #write the timesjob job details to the excel file but different sheets
+
+        on_Clean_Data()
+
+        update_result_box("Top skills extracted and saved to skills.json.")
+        guiwindow.update_idletasks()    # Force GUI update
+        TopSkills.run_extraction('cleaned_job_descriptions.csv', 'skills.json', 20)
+        
+
+        progress.set(1)               # Increase progress bar to 80%
+        guiwindow.update_idletasks()    # Force GUI update
+    else:
+        update_result_box("No jobs found or matched the criteria.")
+        progress.set(1)
+        guiwindow.update_idletasks()  # Force GUI update
 
 def initialize_gui():
     global JobPositionEntry, JobLocationEntry, JobSkillsEntry, PageNumberEntry, progress, guiwindow, indeed_var, timesjobs_var, cleandata_var, topskills_var, result_box
