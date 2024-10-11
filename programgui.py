@@ -37,6 +37,7 @@ def on_Clean_Data():
     # Function to run data cleaning in a separate thread
     def clean_data_thread():
         update_result_box("Cleaning job descriptions...")
+        progress.set(0.8)
         guiwindow.update_idletasks()
         cleaned_outputfile, success = Cleandata.clean_job_descriptions()
         if success:
@@ -50,6 +51,7 @@ def scrape_indeed_jobs(position, noOfjobs, result_queue):
     indeed_job_list = []
     try:
         update_result_box("Scraping Indeed...")
+        progress.set(0.45)
         indeed_jobs = indeed_scraper.main(position, noOfjobs)  # Get job details from Indeed scraper
         for job in indeed_jobs[1][0]:  # Job details are stored in the 2nd index of the list
             jobs_info = {
@@ -68,6 +70,7 @@ def scrape_timesjobs_jobs(position, location, user_skills, page_number, result_q
     timesjob_list = []
     try:
         update_result_box("Scraping TimesJobs...")
+        progress.set(0.50)
         timesjobs_jobs, timesjobs_count, timesjob_dups = timesJob_scraper.main(position, location, user_skills, page_number)
         for job in timesjobs_jobs:  # The job details are stored in the 1st index of the list
             jobs_info = {
@@ -95,6 +98,7 @@ def scrape_jobs(selected_sites, position, location, user_skills, page_number):
             scrape_indeed_jobs(position, noOfjobs, result_queue)
         if 'timesjobs' in selected_sites:
             scrape_timesjobs_jobs(position, location, user_skills, page_number, result_queue)
+        save_results_to_excel(indeed_job_list, timesjob_list)
 
     threading.Thread(target=worker, daemon=True).start()  # Start the scraping worker thread
 
@@ -124,11 +128,15 @@ def save_results_to_excel(indeed_job_list, timesjob_list):
         if timesjob_list:
             df_timesjob.to_excel(writer, sheet_name='TimesJob', index=False)  # Write the TimesJobs job details to the Excel file
 
-    on_Clean_Data()  # Call function to clean data
     update_result_box("Job results saved to jobs.xlsx.")
+    on_Clean_Data()  # Call function to clean data
+    TopSkills.run_extraction('cleaned_job_descriptions.csv', 'skills.json', 20)
+    progress.set(1)
+    
 
 def on_submit():
     clear_result_box()  # Clear the result box
+    progress.set(0)
     position = JobPositionEntry.get().strip()  # Get the position entered by the user
     location = JobLocationEntry.get().strip()  # Get the location entered by the user
     user_skills = JobSkillsEntry.get().split(',')  # Get the skills entered by the user
@@ -151,6 +159,7 @@ def on_submit():
             return
 
     update_result_box("Program started. Please wait...")
+    progress.set(0.15)
     guiwindow.update_idletasks()  # Force GUI update
 
     selected_sites = get_selected_sites()  # Get the selected sites
