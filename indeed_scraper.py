@@ -24,7 +24,6 @@ def create_session() -> requests.Session: # Function to create a session object
 class Site(Enum): # Enum class to define the sites
     LINKEDIN = "linkedin" # LinkedIn site
     INDEED = "indeed" # Indeed site
-    GLASSDOOR = "glassdoor" # Glassdoor site
     TIMESJOBS = "timesjobs" # TimesJobs site
     
 class UserInput(BaseModel): # Base model class to define the user input
