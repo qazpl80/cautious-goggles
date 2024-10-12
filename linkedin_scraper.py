@@ -45,6 +45,7 @@ def scrapeLinkedin(search_term, search_location, noOfjobswanted): # function to 
         response = session.get(baseUrl, params=param, timeout=5) # send a get request to the url with the parameters
         if response.status_code != 200: # check if the response is successful
             print('response status code: ', response.status_code, response.reason) # print the status code and reason
+            raise Exception(jobResponse.status_code, jobResponse.reason, 'Failed to get the response') # raise an exception
         soup = BeautifulSoup(response.text, 'html.parser') # parse the response text
         jobs = soup.find_all('div', class_='base-card') # find all the jobs
         for job in jobs: # loop through the jobs
@@ -58,9 +59,12 @@ def scrapeLinkedin(search_term, search_location, noOfjobswanted): # function to 
             joblocation = job.find('span', class_='job-search-card__location').get_text(strip=True) if job.find('span', class_='job-search-card__location').get_text(strip=True) else 'NIL' # get the job location if it exists else set it to NIL
             jobPostDate = job.find('time',class_='job-search-card__listdate')['datetime'] if job.find('time',class_='job-search-card__listdate')['datetime'] else 'NIL' # get the job post date if it exists else set it to NIL
             # jobPostDate = datetime.strptime(jobDatetime, "%Y-%m-%d") # convert the job post date to datetime object
+            session.cookies.clear() # clear the cookies
+            time.sleep(random.uniform(3, 6))
             jobResponse = session.get(jobUrl, timeout=5) # send a get request to the job url
             if jobResponse.status_code != 200: # check if the response is successful
                 print('jobResponse status code: ', jobResponse.status_code, jobResponse.reason) # print the status code and reason
+                raise Exception(jobResponse.status_code, jobResponse.reason, 'Failed to get the job response') # raise an exception
             jobSoup = BeautifulSoup(jobResponse.text, 'html.parser') # parse the response text
             jobDesctag = jobSoup.find('div', class_='show-more-less-html__markup') if jobSoup.find('div', class_='show-more-less-html__markup') else 'NIL' # get the job description tag if it exists else set it to NIL
             for attr in list(jobDesctag.attrs): # loop through the attributes of the tag
