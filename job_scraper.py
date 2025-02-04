@@ -91,7 +91,7 @@ def scrapeJobs(
     )
 
     def scrapePlatform(site: Site):  # Scrape platform based on site
-        api_key = "AIzaSyC8NH5UMGf_58qNZO3FJKofsaW-MlwOqCk"  # Your Google API Key
+        api_key = ""  # Your Google API Key
         search_engine_id = "d6151e243d5814a7c"  # Your Search Engine ID
         scraper = SCRAPEPLATFORM[site](api_key, search_engine_id)  # Create a scraper instance
         data = scraper.scrape(scrapeInput)  # Scrape the data
